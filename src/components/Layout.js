@@ -19,7 +19,12 @@ const Layout = ({ children }) => {
         sx={{
           width: drawerWidth,
           flexShrink: 0,
-          [`& .MuiDrawer-paper`]: { width: drawerWidth, boxSizing: 'border-box', backgroundColor: '#013793', color: '#fff' },
+          [`& .MuiDrawer-paper`]: { 
+            width: drawerWidth, 
+            boxSizing: 'border-box', 
+            background: 'linear-gradient(180deg, rgba(0,51,145,1) 0%, rgba(26,143,206,1) 50%, rgba(0,51,145,1) 100%)', 
+            color: '#fff' 
+          },
         }}
       >
         <Toolbar>

@@ -7,7 +7,9 @@ import {
   IconButton, 
   TextField, 
   InputAdornment,
-  CircularProgress
+  CircularProgress,
+  FormControlLabel,
+  Switch
 } from '@mui/material';
 import { 
   Reply as ReplyIcon, 
@@ -15,10 +17,13 @@ import {
   EmojiEmotions as EmojiIcon,
   Close as CloseIcon 
 } from '@mui/icons-material';
+import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
+import DescriptionIcon from '@mui/icons-material/Description';
 import EmojiPicker from 'emoji-picker-react';
 import { fetchMessages } from '../services/webhookService';
 import { useTheme } from '@mui/material/styles';
 import axios from 'axios';
+import CustomAudioPlayer from './customAudioPlayer';
 
 const Messages = ({ conversationId }) => {
   const [messages, setMessages] = useState([]);
@@ -26,11 +31,40 @@ const Messages = ({ conversationId }) => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [autoresponse, setAutoresponse] = useState(true); // State for autoresponse
   const messagesEndRef = useRef(null);
+  const imageInputRef = useRef(null);
+  const documentInputRef = useRef(null);
   const theme = useTheme();
   const ICON_COLOR = '#2B91FF';
 
+  // Extract client name from messages (first sender that is not "Sharky")
+  const clientName = messages.find(m => m.sender && m.sender !== 'Sharky')?.sender || conversationId;
+
+  useEffect(() => {
+    if (conversationId) {
+      axios.get(`https://chatboot-webhook-production.up.railway.app/api/conversation-detail/${conversationId}`)
+        .then((res) => {
+          const conv = res.data;
+          console.log("Valor de autoresponse:", conv.autoresponse);
+          setAutoresponse(!!conv.autoresponse);
+        })
+        .catch((error) => {
+          console.error("Error fetching conversation details", error);
+        });
+    }
+  }, [conversationId]);
   
+  const handleAutoresponseToggle = async (e) => {
+    const newValue = e.target.checked;
+    setAutoresponse(newValue);
+    try {
+      const response = await axios.put(`https://chatboot-webhook-production.up.railway.app/api/conversations/${conversationId}/autoresponse`, { autoresponse: newValue });
+      console.log('Autoresponse updated successfully:', response.data);
+    } catch (error) {
+      console.error('Error updating autoresponse:', error.response ? error.response.data : error.message);
+    }
+  };
 
   // Polling: refresh messages every 5 seconds
   useEffect(() => {
@@ -89,7 +123,6 @@ const Messages = ({ conversationId }) => {
       };
       getMessages();
     }
-    // Reset states when conversation changes
     setReplyingTo(null);
     setShowEmojiPicker(false);
     setInputMessage('');
@@ -101,7 +134,7 @@ const Messages = ({ conversationId }) => {
 
   const handleReply = (messageId) => {
     setReplyingTo(messages.find(m => m.message_id === messageId));
-    setShowEmojiPicker(false); // Close emoji picker when replying
+    setShowEmojiPicker(false);
   };
 
   const handleEmojiClick = (emojiData) => {
@@ -118,7 +151,6 @@ const Messages = ({ conversationId }) => {
         conversationId
       });
       try {
-        // Retrieve the client's phone number from messages (first message with sender not "Sharky")
         const clientPhone = messages.find(m => m.sender && m.sender !== 'Sharky')?.sender;
         
         if (!clientPhone) {
@@ -140,7 +172,6 @@ const Messages = ({ conversationId }) => {
         );
         console.log('Message sent and stored:', response.data);
 
-        // Refresh the messages after sending
         const data = await fetchMessages(conversationId);
         const sortedMessages = data.sort((a, b) => new Date(b.sent_at) - new Date(a.sent_at));
         setMessages(sortedMessages);
@@ -162,6 +193,43 @@ const Messages = ({ conversationId }) => {
     }
   };
 
+  // Handle media file upload (images or documents)
+  const handleMediaUpload = async (mediaType, event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+    const clientPhone = messages.find(m => m.sender && m.sender !== 'Sharky')?.sender;
+    if (!clientPhone) {
+      console.error('No client phone number found');
+      return;
+    }
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('to', clientPhone);
+    formData.append('mediaType', mediaType);
+    // Optionally add caption here if desired, for now an empty caption:
+    formData.append('caption', '');
+    formData.append('conversationId', conversationId);
+
+    try {
+      const response = await axios.post(
+        'https://chatboot-webhook-production.up.railway.app/api/send-media',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+      console.log('Media message sent:', response.data);
+      const data = await fetchMessages(conversationId);
+      const sortedMessages = data.sort((a, b) => new Date(b.sent_at) - new Date(a.sent_at));
+      setMessages(sortedMessages);
+      scrollToBottom();
+    } catch (error) {
+      console.error('Error sending media message:', error.response ? error.response.data : error.message);
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -170,20 +238,33 @@ const Messages = ({ conversationId }) => {
         height: '100%',
         width: '100%',
         overflow: 'hidden',
-        position: 'relative', // For emoji picker positioning
+        position: 'relative',
       }}
     >
-      {/* Header */}
-      <Typography 
-        variant="h6" 
-        sx={{ 
-          p: 2, 
+      {/* Header with functional switch */}
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          p: 2,
           borderBottom: '1px solid #ccc',
           backgroundColor: 'white',
         }}
       >
-        Mensajes de la Conversación {conversationId}
-      </Typography>
+        <Typography variant="h6">
+          {clientName}
+        </Typography>
+        <FormControlLabel 
+          control={
+            <Switch 
+              checked={autoresponse} 
+              onChange={handleAutoresponseToggle} 
+            />
+          } 
+          label="Respuestas automáticas" 
+        />
+      </Box>
       
       {/* Messages List */}
       <List
@@ -257,7 +338,13 @@ const Messages = ({ conversationId }) => {
                     wordBreak: 'break-word',
                   }}
                 >
-                  <Typography variant="body1">{msg.message}</Typography>
+                  {msg.message_type === 'audio' ? (
+                    <CustomAudioPlayer 
+                      src={`https://chatboot-webhook-production.up.railway.app/api/download-media?url=${encodeURIComponent(msg.media_url)}&mediaId=${encodeURIComponent(msg.media_id)}`}
+                    />
+                  ) : (
+                    <Typography variant="body1">{msg.message}</Typography>
+                  )}
                   <Typography 
                     variant="caption" 
                     sx={{ 
@@ -327,13 +414,13 @@ const Messages = ({ conversationId }) => {
         </Box>
       )}
 
-      {/* Emoji Picker */}
+      {/* Emoji Picker and hidden file inputs */}
       {showEmojiPicker && (
         <Box
           sx={{
             position: 'absolute',
             bottom: '80px',
-            right: '20px',
+            left: '20px',
             zIndex: 1,
             boxShadow: 3,
             borderRadius: '8px',
@@ -347,6 +434,22 @@ const Messages = ({ conversationId }) => {
           />
         </Box>
       )}
+
+      {/* Hidden file inputs for image and document uploads */}
+      <input
+        type="file"
+        accept="image/*"
+        ref={imageInputRef}
+        style={{ display: 'none' }}
+        onChange={(e) => handleMediaUpload('image', e)}
+      />
+      <input
+        type="file"
+        accept=".pdf,.doc,.docx"
+        ref={documentInputRef}
+        style={{ display: 'none' }}
+        onChange={(e) => handleMediaUpload('document', e)}
+      />
 
       {/* Message Input */}
       <Box
@@ -383,17 +486,43 @@ const Messages = ({ conversationId }) => {
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <IconButton 
-                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                  sx={{ 
-                    color: ICON_COLOR,
-                    '&:hover': {
-                      backgroundColor: 'rgba(43, 145, 255, 0.04)'
-                    }
-                  }}
-                >
-                  <EmojiIcon />
-                </IconButton>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <IconButton 
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    sx={{ 
+                      color: ICON_COLOR,
+                      '&:hover': {
+                        backgroundColor: 'rgba(43, 145, 255, 0.04)'
+                      }
+                    }}
+                  >
+                    <EmojiIcon />
+                  </IconButton>
+                  <IconButton 
+                    onClick={() => imageInputRef.current.click()}
+                    sx={{ 
+                      color: ICON_COLOR,
+                      ml: 1,
+                      '&:hover': {
+                        backgroundColor: 'rgba(43, 145, 255, 0.04)'
+                      }
+                    }}
+                  >
+                    <PhotoCameraIcon />
+                  </IconButton>
+                  <IconButton 
+                    onClick={() => documentInputRef.current.click()}
+                    sx={{ 
+                      color: ICON_COLOR,
+                      ml: 1,
+                      '&:hover': {
+                        backgroundColor: 'rgba(43, 145, 255, 0.04)'
+                      }
+                    }}
+                  >
+                    <DescriptionIcon />
+                  </IconButton>
+                </Box>
               </InputAdornment>
             ),
             endAdornment: (

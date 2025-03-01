@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard';
 import Chat from './pages/Chat';
 import Appointments from './pages/Appointments';
 import Layout from './components/Layout';
+import Login from './pages/Login';
 
 
 const App = () => {

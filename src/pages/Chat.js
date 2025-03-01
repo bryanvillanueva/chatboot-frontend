@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider } from '@mui/material';
+import { Box, Typography, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, Badge } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { fetchConversations } from '../services/webhookService';
 import Messages from '../components/Messages';
@@ -65,8 +65,8 @@ const Chat = ({ onSelectConversation }) => {
         >
           {conversations.map((conv) => (
             <React.Fragment key={conv.conversation_id}>
-              <ListItem 
-                button 
+              <ListItem
+                button
                 onClick={() => handleSelectConversation(conv.conversation_id)}
                 sx={{
                   '&:hover': {
@@ -75,9 +75,24 @@ const Chat = ({ onSelectConversation }) => {
                 }}
               >
                 <ListItemAvatar>
-                  <Avatar sx={{ bgcolor: theme.palette.primary.light }}>
-                    {conv.client_name ? conv.client_name.charAt(0) : '?'}
-                  </Avatar>
+                  {conv.last_message_sender && conv.last_message_sender !== 'Sharky' ? (
+                    <Badge
+                      variant="dot"
+                      color="primary"
+                      anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'right',
+                      }}
+                    >
+                      <Avatar sx={{ bgcolor: theme.palette.primary.light }}>
+                        {conv.client_name ? conv.client_name.charAt(0) : '?'}
+                      </Avatar>
+                    </Badge>
+                  ) : (
+                    <Avatar sx={{ bgcolor: theme.palette.primary.light }}>
+                      {conv.client_name ? conv.client_name.charAt(0) : '?'}
+                    </Avatar>
+                  )}
                 </ListItemAvatar>
                 <ListItemText
                   primary={conv.client_name || 'Sin nombre'}
@@ -89,9 +104,12 @@ const Chat = ({ onSelectConversation }) => {
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         maxWidth: '160px',
+                        color: conv.last_message_sender && conv.last_message_sender !== 'Sharky' ? '#2b91ff' : 'inherit'
                       }}
                     >
-                      {conv.last_message || 'Sin mensajes'}
+                      {conv.last_message_type === 'audio'
+                        ? 'Mensaje de voz'
+                        : (conv.last_message || 'Sin mensajes')}
                     </Typography>
                   }
                 />
