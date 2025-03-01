@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.js": "/chatboot-frontend/static/js/main.47f93a0d.js",
+    "main.js": "/chatboot-frontend/static/js/main.d8136ed4.js",
     "index.html": "/chatboot-frontend/index.html",
-    "main.47f93a0d.js.map": "/chatboot-frontend/static/js/main.47f93a0d.js.map"
+    "main.d8136ed4.js.map": "/chatboot-frontend/static/js/main.d8136ed4.js.map"
   },
   "entrypoints": [
-    "static/js/main.47f93a0d.js"
+    "static/js/main.d8136ed4.js"
   ]
 }
