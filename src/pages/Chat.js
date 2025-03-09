@@ -105,7 +105,7 @@ const Chat = ({ onSelectConversation }) => {
               min-height: 41px !important;
               height: 41px !important;
               margin: 0 !important;
-              padding: 0 !important;
+              padding: 50 !important;
             }
           }
           html, body {
@@ -113,6 +113,9 @@ const Chat = ({ onSelectConversation }) => {
             padding: 0;
             height: 100%;
             overflow: hidden;
+          }
+            .css-zxdg2z {
+              padding: 2px;
           }
         `}
       </style>
@@ -123,9 +126,10 @@ const Chat = ({ onSelectConversation }) => {
         sx={{
           display: 'flex',
           width: '100%',
-          height: 'calc(100vh - 41px)', // Ajuste para no generar scroll
+          height: 'calc(100vh - 40px)', // Ajuste para no generar scroll
           overflow: 'hidden',
-          bgcolor: '#f0f2f5',
+
+          paddingTop: '24px', 
         }}
       >
         {/* Sidebar de Chats */}
@@ -150,7 +154,7 @@ const Chat = ({ onSelectConversation }) => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <SearchIcon color="action" />
+                    <SearchIcon sx={{ color: '#2B91FF !important' }} />
                   </InputAdornment>
                 ),
                 endAdornment: searchQuery && (
@@ -169,13 +173,13 @@ const Chat = ({ onSelectConversation }) => {
                   borderRadius: 2,
                   bgcolor: '#f0f2f5',
                   '& fieldset': {
-                    borderColor: 'transparent',
+                    borderColor: '#2B91FF',
                   },
                   '&:hover fieldset': {
-                    borderColor: 'transparent',
+                    borderColor: '#2B91FF',
                   },
                   '&.Mui-focused fieldset': {
-                    borderColor: '#003491',
+                    borderColor: '#2B91FF',
                   }
                 }
               }}
