@@ -606,7 +606,7 @@ const Messages = ({ conversationId }) => {
                 {/* Burbuja del mensaje con box-shadow */}
                 <Box
                   sx={{
-                    backgroundColor: msg.sender === 'Sharky' ? '#2B91FF' : '#f0f2f5',
+                    backgroundColor: msg.sender === 'Sharky' ? '#003491' : '#ffffff',
                     color: msg.sender === 'Sharky' ? '#fff' : 'inherit',
                     borderRadius: '25px',
                     p: 2,
@@ -693,6 +693,7 @@ const Messages = ({ conversationId }) => {
             p: 2,
             bgcolor: '#f0f2f5',
             borderTop: '1px solid #ccc',
+           
           }}
         >
           <Box
