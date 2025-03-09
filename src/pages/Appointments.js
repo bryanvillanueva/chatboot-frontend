@@ -42,7 +42,7 @@ const AppointmentForm = () => {
     <>
       <Navbar pageTitle="Agendar Cita" />
       <Box sx={{ padding: '20px', margin: '0 auto' }}>
-        <Typography variant="h4" color="#dc3545" sx={{ marginBottom: '20px', textAlign: 'center' }}>
+        <Typography variant="h4" color="#2B91FF" sx={{ marginBottom: '20px', textAlign: 'center' }}>
           Agendar Cita
         </Typography>
         <form onSubmit={handleSubmit}>
@@ -77,7 +77,7 @@ const AppointmentForm = () => {
               </Grid>
             )}
             <Grid item xs={12}>
-              <Button type="submit" variant="contained" fullWidth sx={{ backgroundColor: '#dc3545', color: '#fff', '&:hover': { backgroundColor: '#be1924' } }}>
+              <Button type="submit" variant="contained" fullWidth sx={{ backgroundColor: '#2B91FF', color: '#fff', '&:hover': { backgroundColor: '#003491' } }}>
                 Agendar Cita
               </Button>
             </Grid>
