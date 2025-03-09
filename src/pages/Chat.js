@@ -200,7 +200,7 @@ const Chat = ({ onSelectConversation }) => {
                 <React.Fragment key={conv.conversation_id}>
                   <ListItem
                     button
-                    onClick={() => handleSelectConversation(conv.conversation_id, conv.client_name)}
+                    onClick={() => handleSelectConversation(conv.conversation_id, conv.client_name, conv.phone_number)}
                     sx={{
                       backgroundColor: selectedConversationId === conv.conversation_id ? theme.palette.action.selected : 'inherit',
                       '&:hover': {
@@ -208,6 +208,7 @@ const Chat = ({ onSelectConversation }) => {
                       },
                       transition: 'background 0.2s ease-in-out',
                       padding: '10px 16px',
+                      cursor: 'pointer',
                     }}
                   >
                     <ListItemAvatar>
