@@ -29,6 +29,9 @@ import { fetchMessages } from '../services/webhookService';
 import { useTheme } from '@mui/material/styles';
 import axios from 'axios';
 import CustomAudioPlayer from './customAudioPlayer';
+import { Info as InfoIcon } from '@mui/icons-material';
+import Tooltip from '@mui/material/Tooltip';
+import InfoDrawer from './InfoDrawer';
 
 // Componente para renderizar imágenes con el endpoint proxy
 const MessageImage = ({ mediaId, onClick }) => {
@@ -67,7 +70,9 @@ const MessageImage = ({ mediaId, onClick }) => {
     setError(null);
     setRetryCount(0);
   }, [mediaId]);
-  
+
+  // Info Drawer
+
   return (
     <Box sx={{ maxWidth: '100%', mt: 1, mb: 1 }}>   
       {loading && (
@@ -183,7 +188,38 @@ const Messages = ({ conversationId }) => {
   const documentInputRef = useRef(null);
   const theme = useTheme();
   const ICON_COLOR = '#2B91FF';
+  const [infoDrawerOpen, setInfoDrawerOpen] = useState(false);
+  const [highlightedMessageId, setHighlightedMessageId] = useState(null);
+  const messageRefs = useRef({}); // Para almacenar referencias a los mensajes
 
+  const handleOpenInfoDrawer = () => {
+    setInfoDrawerOpen(true);
+  };
+  
+  const handleCloseInfoDrawer = () => {
+    setInfoDrawerOpen(false);
+  };
+
+
+  // Función para manejar el clic en un mensaje desde el InfoDrawer
+  const handleMessageClick = (messageId) => {
+    setHighlightedMessageId(messageId);
+    
+    // Dar tiempo para que React renderice antes de hacer scroll
+    setTimeout(() => {
+      if (messageRefs.current[messageId]) {
+        // Acceder al elemento del mensaje
+        const messageElement = messageRefs.current[messageId];
+        
+        // Hacer scroll al mensaje
+        messageElement.scrollIntoView({ 
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }
+    }, 100);
+  };
+  
   // Extraer el nombre del cliente (primer sender que no sea "Sharky")
   const clientName = messages.find(m => m.sender && m.sender !== 'Sharky')?.sender || conversationId;
 
@@ -506,40 +542,56 @@ const Messages = ({ conversationId }) => {
   };
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        width: '100%',
-        overflow: 'hidden',
-        position: 'relative',
-      }}
-    >
-      {/* Header con switch funcional */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          p: 2,
-          borderBottom: '1px solid #ccc',
-          backgroundColor: 'white',
-        }}
-      >
-        <Typography variant="h6">
-          {clientName}
-        </Typography>
-        <FormControlLabel 
-          control={
-            <Switch 
-              checked={autoresponse} 
-              onChange={handleAutoresponseToggle} 
-            />
-          } 
-          label="Respuestas automáticas" 
-        />
-      </Box>
+<Box
+    sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100%',
+      width: '100%',
+      overflow: 'hidden',
+      position: 'relative',
+      backgroundImage: `url('https://i.pinimg.com/736x/8c/98/99/8c98994518b575bfd8c949e91d20548b.jpg')`,
+      backgroundSize: 'auto',
+      backgroundPosition: 'center',
+      transition: 'padding-right 0.3s ease', // Añadir transición suave
+      paddingRight: infoDrawerOpen ? '300px' : '0', // Ajustar espacio cuando el drawer está abierto
+    }}
+  >
+  <Box
+    sx={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      p: 2,
+      borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
+      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+      backdropFilter: 'blur(5px)',
+    }}
+  >
+    <Typography variant="h6">
+      {clientName}
+    </Typography>
+    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+      <FormControlLabel 
+        control={
+          <Switch 
+            checked={autoresponse} 
+            onChange={handleAutoresponseToggle} 
+          />
+        } 
+        label="Respuestas automáticas" 
+      />
+      <Tooltip title="Información">
+        <IconButton 
+          color="primary" 
+          onClick={handleOpenInfoDrawer}
+          sx={{ ml: 1 }}
+        >
+          <InfoIcon />
+        </IconButton>
+      </Tooltip>
+    </Box>
+  </Box>
       
       {/* Lista de mensajes */}
       <List
@@ -559,18 +611,27 @@ const Messages = ({ conversationId }) => {
           },
         }}
       >
-        {messages.length > 0 ? (
-          messages.map((msg) => (
-            <ListItem
-              key={msg.message_id}
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: msg.sender === 'Sharky' ? 'flex-end' : 'flex-start',
-                px: 2,
-                py: 1,
-              }}
-            >
+
+{messages.length > 0 ? (
+  messages.map((msg) => (
+    <ListItem
+      key={msg.message_id}
+      ref={(el) => messageRefs.current[msg.message_id] = el} // Guardar referencia al elemento
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: msg.sender === 'Sharky' ? 'flex-end' : 'flex-start',
+        px: 2,
+        py: 1,
+        ...(highlightedMessageId === msg.message_id && {
+          animation: 'highlight 2s',
+          '@keyframes highlight': {
+            '0%': { backgroundColor: 'rgba(66, 165, 245, 0.3)' },
+            '100%': { backgroundColor: 'transparent' }
+          }
+        })
+      }}
+    >
               <Box
                 sx={{
                   position: 'relative',
@@ -864,6 +925,13 @@ const Messages = ({ conversationId }) => {
           }}
         />
       </Box>
+      {/* Componente de InfoDrawer */}
+      <InfoDrawer 
+        open={infoDrawerOpen} 
+        onClose={handleCloseInfoDrawer} 
+        conversationId={conversationId}
+        onMessageClick={handleMessageClick}
+      />
     </Box>
   );
 };
