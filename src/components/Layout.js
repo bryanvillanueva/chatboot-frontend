@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, CssBaseline, Drawer, List, ListItem, ListItemIcon, ListItemText, Toolbar, Typography } from '@mui/material';
+import { Box, CssBaseline, Drawer, List, ListItem, ListItemIcon, ListItemText, Toolbar, Typography, Divider } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import ChatIcon from '@mui/icons-material/Chat';
 import DateIcon from '@mui/icons-material/DateRange';
@@ -13,6 +13,7 @@ const Layout = ({ children }) => {
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
+      
       {/* Menú Lateral */}
       <Drawer
         variant="permanent"
@@ -22,35 +23,49 @@ const Layout = ({ children }) => {
           [`& .MuiDrawer-paper`]: { 
             width: drawerWidth, 
             boxSizing: 'border-box', 
-            background: 'linear-gradient(180deg, rgba(0,51,145,1) 0%, rgba(26,143,206,1) 50%, rgba(0,51,145,1) 100%)', 
+            background: "#2B91FF", 
             color: '#fff' 
           },
         }}
       >
-        <Toolbar>
+        <Toolbar 
+          sx={{ 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center', 
+            width: "100%", 
+            py: 2
+          }}
+        >
           <Typography variant="h6" noWrap>
             Shark Agency
           </Typography>
         </Toolbar>
+
         <List>
           <ListItem button component={Link} to="/" selected={location.pathname === '/'}>
             <ListItemIcon>
               <DashboardIcon sx={{ color: '#fff' }} />
             </ListItemIcon>
-            <ListItemText sx={{ color: '#fff' }}  primary="Dashboard" />
+            <ListItemText sx={{ color: '#fff' }} primary="Dashboard" />
           </ListItem>
+          <Divider sx={{ bgcolor: "rgba(255,255,255,0.3)", mx: 2, my: 1 }} />
+
           <ListItem button component={Link} to="/chat" selected={location.pathname === '/chat'}>
             <ListItemIcon>
               <ChatIcon sx={{ color: '#fff' }} />
             </ListItemIcon>
-            <ListItemText sx={{ color: '#fff' }}  primary="Chat" />
+            <ListItemText sx={{ color: '#fff' }} primary="Chat" />
           </ListItem>
+          <Divider sx={{ bgcolor: "rgba(255,255,255,0.3)", mx: 2, my: 1 }} />
+
           <ListItem button component={Link} to="/appointments" selected={location.pathname === '/appointments'}>
             <ListItemIcon>
               <DateIcon sx={{ color: '#fff' }} />
             </ListItemIcon>
-            <ListItemText sx={{ color: '#fff' }}  primary="Appointments" />
+            <ListItemText sx={{ color: '#fff' }} primary="Appointments" />
           </ListItem>
+          <Divider sx={{ bgcolor: "rgba(255,255,255,0.3)", mx: 2, my: 1 }} />  {/* Línea agregada al final */}
         </List>
       </Drawer>
 
