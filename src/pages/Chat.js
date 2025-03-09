@@ -74,40 +74,57 @@ const Chat = ({ onSelectConversation }) => {
         sx={{
           display: 'flex',
           width: '100%',
-          height: selectedConversationId ? 'calc(100vh - 64px)' : '100vh', // Ajuste condicional de altura
+          height: 'calc(100vh - 41px)', // Ajuste para no generar scroll
           overflow: 'hidden',
           bgcolor: '#f0f2f5',
-          flexDirection: 'column',
-          pt: selectedConversationId ? '20px' : 0, // Padding-top condicional
-          
         }}
       >
+        {/* Sidebar de Chats */}
         <Box
           sx={{
+            width: '250px',
+            height: '100%',
+            bgcolor: 'white',
+            borderRight: '1px solid #ccc',
             display: 'flex',
-            width: '100%',
-            height: 'calc(100vh - 41px)', // Ajuste para no generar scroll
-            overflow: 'hidden',
-            
+            flexDirection: 'column',
           }}
         >
-
-          {conversations.map((conv) => (
-            <React.Fragment key={conv.conversation_id}>
-              <ListItem
-                button
-                onClick={() => handleSelectConversation(conv.conversation_id)}
-                sx={{
-                  '&:hover': {
-                    backgroundColor: theme.palette.action.hover,
-                  },
-                }}
-              >
-                <ListItemAvatar>
-                  {conv.last_message_sender && conv.last_message_sender !== 'Sharky' ? (
+          <Typography variant="h6" sx={{ p: 2, margin: 0 }}>
+            Chats
+          </Typography>
+          <List
+            sx={{
+              flex: 1,
+              overflowY: 'auto',
+              '&::-webkit-scrollbar': {
+                width: '6px',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                backgroundColor: '#888',
+                borderRadius: '3px',
+              },
+            }}
+          >
+            {conversations.map((conv) => (
+              <React.Fragment key={conv.conversation_id}>
+                <ListItem
+                  button
+                  onClick={() => handleSelectConversation(conv.conversation_id, conv.client_name)}
+                  sx={{
+                    backgroundColor: selectedConversationId === conv.conversation_id ? theme.palette.action.selected : 'inherit',
+                    '&:hover': {
+                      backgroundColor: theme.palette.action.hover,
+                    },
+                    transition: 'background 0.2s ease-in-out',
+                    padding: '10px 16px',
+                  }}
+                >
+                  <ListItemAvatar>
                     <Badge
                       variant="dot"
                       color="primary"
+                      invisible={!conv.last_message_sender || conv.last_message_sender === 'Sharky'}
                       anchorOrigin={{
                         vertical: 'bottom',
                         horizontal: 'right',
@@ -117,160 +134,58 @@ const Chat = ({ onSelectConversation }) => {
                         {conv.client_name ? conv.client_name.charAt(0) : '?'}
                       </Avatar>
                     </Badge>
-                  ) : (
-                    <Avatar sx={{ bgcolor: theme.palette.primary.light }}>
-                      {conv.client_name ? conv.client_name.charAt(0) : '?'}
-                    </Avatar>
-                  )}
-                </ListItemAvatar>
-                <ListItemText
-                  primary={conv.client_name || 'Sin nombre'}
-                  secondary={
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        maxWidth: '160px',
-                        color: conv.last_message_sender && conv.last_message_sender !== 'Sharky' ? '#2b91ff' : 'inherit'
-                      }}
-                    >
-                      {getLastMessagePreview(conv)}
-                    </Typography>
-                  }
-                />
-              </ListItem>
-              <Divider />
-            </React.Fragment>
-          ))}
-        </List>
-      </Box>
-
-      {/* Right panel: Messages */}
-      <Box
-        sx={{
-          flex: 1,
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden',
-          bgcolor: 'white',
-        }}
-      >
-        {selectedConversationId ? (
-          <Messages conversationId={selectedConversationId} />
-        ) : (
-
-          {/* Sidebar de Chats */}
-
-          <Box
-            sx={{
-              width: '250px',
-              height: '100%',
-              bgcolor: 'white',
-              borderRight: '1px solid #ccc',
-              display: 'flex',
-              flexDirection: 'column',
-            }}
-          >
-            <Typography variant="h6" sx={{ p: 2, margin: 0 }}>
-              Chats
-            </Typography>
-            <List
-              sx={{
-                flex: 1,
-                overflowY: 'auto',
-                '&::-webkit-scrollbar': {
-                  width: '6px',
-                },
-                '&::-webkit-scrollbar-thumb': {
-                  backgroundColor: '#888',
-                  borderRadius: '3px',
-                },
-              }}
-            >
-              {conversations.map((conv) => (
-                <React.Fragment key={conv.conversation_id}>
-                  <ListItem
-                    button
-                    onClick={() => handleSelectConversation(conv.conversation_id, conv.client_name)}
-                    sx={{
-                      backgroundColor: selectedConversationId === conv.conversation_id ? theme.palette.action.selected : 'inherit',
-                      '&:hover': {
-                        backgroundColor: theme.palette.action.hover,
-                      },
-                      transition: 'background 0.2s ease-in-out',
-                      padding: '10px 16px',
-                    }}
-                  >
-                    <ListItemAvatar>
-                      <Badge
-                        variant="dot"
-                        color="primary"
-                        invisible={!conv.last_message_sender || conv.last_message_sender === 'Sharky'}
-                        anchorOrigin={{
-                          vertical: 'bottom',
-                          horizontal: 'right',
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={conv.client_name || 'Sin nombre'}
+                    secondary={
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          maxWidth: '160px',
+                          color: conv.last_message_sender && conv.last_message_sender !== 'Sharky' ? '#2b91ff' : 'inherit',
                         }}
                       >
-                        <Avatar sx={{ bgcolor: theme.palette.primary.light }}>
-                          {conv.client_name ? conv.client_name.charAt(0) : '?'}
-                        </Avatar>
-                      </Badge>
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={conv.client_name || 'Sin nombre'}
-                      secondary={
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                            maxWidth: '160px',
-                            color: conv.last_message_sender && conv.last_message_sender !== 'Sharky' ? '#2b91ff' : 'inherit',
-                          }}
-                        >
-                          {conv.last_message_type === 'audio' ? 'Mensaje de voz' : conv.last_message || 'Sin mensajes'}
-                        </Typography>
-                      }
-                    />
-                  </ListItem>
-                  <Divider />
-                </React.Fragment>
-              ))}
-            </List>
-          </Box>
+                        {getLastMessagePreview(conv)}
+                      </Typography>
+                    }
+                  />
+                </ListItem>
+                <Divider />
+              </React.Fragment>
+            ))}
+          </List>
+        </Box>
 
-          {/* Contenedor del Chat */}
-          <Box
-            sx={{
-              flex: 1,
-              height: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              overflow: 'hidden', // Evita scroll innecesario
-              bgcolor: 'white',
-            }}
-          >
-            {selectedConversationId ? (
-              <Messages conversationId={selectedConversationId} />
-            ) : (
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: '100%',
-                }}
-              >
-                <Typography variant="h6" color="textSecondary">
-                  Selecciona un chat para ver los mensajes
-                </Typography>
-              </Box>
-            )}
-          </Box>
+        {/* Contenedor del Chat */}
+        <Box
+          sx={{
+            flex: 1,
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            overflow: 'hidden',
+            bgcolor: 'white',
+          }}
+        >
+          {selectedConversationId ? (
+            <Messages conversationId={selectedConversationId} />
+          ) : (
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+              }}
+            >
+              <Typography variant="h6" color="textSecondary">
+                Selecciona un chat para ver los mensajes
+              </Typography>
+            </Box>
+          )}
         </Box>
       </Box>
     </>
