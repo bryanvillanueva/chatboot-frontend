@@ -29,6 +29,24 @@ const Chat = ({ onSelectConversation }) => {
     if (onSelectConversation) onSelectConversation(conversationId);
   };
 
+  // Función para determinar qué mostrar como último mensaje según su tipo
+  const getLastMessagePreview = (conversation) => {
+    if (!conversation.last_message_type) {
+      return conversation.last_message || 'Sin mensajes';
+    }
+    
+    switch (conversation.last_message_type) {
+      case 'audio':
+        return 'Mensaje de voz';
+      case 'image':
+        return 'Archivo de imagen';
+      case 'document':
+        return 'Documento adjunto';
+      default:
+        return conversation.last_message || 'Sin mensajes';
+    }
+  };
+
   return (
     <>
       <style>
@@ -73,7 +91,79 @@ const Chat = ({ onSelectConversation }) => {
             
           }}
         >
+
+          {conversations.map((conv) => (
+            <React.Fragment key={conv.conversation_id}>
+              <ListItem
+                button
+                onClick={() => handleSelectConversation(conv.conversation_id)}
+                sx={{
+                  '&:hover': {
+                    backgroundColor: theme.palette.action.hover,
+                  },
+                }}
+              >
+                <ListItemAvatar>
+                  {conv.last_message_sender && conv.last_message_sender !== 'Sharky' ? (
+                    <Badge
+                      variant="dot"
+                      color="primary"
+                      anchorOrigin={{
+                        vertical: 'bottom',
+                        horizontal: 'right',
+                      }}
+                    >
+                      <Avatar sx={{ bgcolor: theme.palette.primary.light }}>
+                        {conv.client_name ? conv.client_name.charAt(0) : '?'}
+                      </Avatar>
+                    </Badge>
+                  ) : (
+                    <Avatar sx={{ bgcolor: theme.palette.primary.light }}>
+                      {conv.client_name ? conv.client_name.charAt(0) : '?'}
+                    </Avatar>
+                  )}
+                </ListItemAvatar>
+                <ListItemText
+                  primary={conv.client_name || 'Sin nombre'}
+                  secondary={
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        maxWidth: '160px',
+                        color: conv.last_message_sender && conv.last_message_sender !== 'Sharky' ? '#2b91ff' : 'inherit'
+                      }}
+                    >
+                      {getLastMessagePreview(conv)}
+                    </Typography>
+                  }
+                />
+              </ListItem>
+              <Divider />
+            </React.Fragment>
+          ))}
+        </List>
+      </Box>
+
+      {/* Right panel: Messages */}
+      <Box
+        sx={{
+          flex: 1,
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          bgcolor: 'white',
+        }}
+      >
+        {selectedConversationId ? (
+          <Messages conversationId={selectedConversationId} />
+        ) : (
+
           {/* Sidebar de Chats */}
+
           <Box
             sx={{
               width: '250px',
