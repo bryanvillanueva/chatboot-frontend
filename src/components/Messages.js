@@ -20,7 +20,8 @@ import {
   EmojiEmotions as EmojiIcon,
   Close as CloseIcon,
   Refresh as RefreshIcon,
-  Delete as DeleteIcon
+  Delete as DeleteIcon,
+Edit as EditIcon, 
 } from '@mui/icons-material';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import DescriptionIcon from '@mui/icons-material/Description';
@@ -436,6 +437,82 @@ const Messages = ({ conversationId }) => {
     }
   };
 
+
+ // Función para manejar la edición de mensajes
+// Función para editar mensaje
+const handleEditMessage = (messageId, currentMessage) => {
+  const newMessage = prompt('Editar mensaje:', currentMessage);
+  
+  if (newMessage === null || newMessage === '') {
+    return; // Usuario canceló o no ingresó nada
+  }
+  
+  console.log('Enviando solicitud de edición:', { messageId, newMessage });
+  
+  fetch(`/api/edit-message/${messageId}`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ newMessage }),
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Error en la solicitud');
+    }
+    return response.json();
+  })
+  .then(data => {
+    console.log('Datos recibidos:', data);
+    // Actualizar UI
+    setMessages(prevMessages => 
+      prevMessages.map(msg => 
+        msg.message_id.toString() === messageId.toString() 
+          ? { ...msg, message: newMessage } 
+          : msg
+      )
+    );
+    alert('Mensaje actualizado correctamente');
+  })
+  .catch(error => {
+    console.error('Error completo:', error);
+    alert('Error al editar mensaje: ' + error.message);
+  });
+};
+
+// Función para eliminar mensaje
+const handleDeleteMessage = (messageId) => {
+  const confirmDelete = window.confirm('¿Estás seguro de que deseas eliminar este mensaje?');
+  
+  if (!confirmDelete) {
+    return;
+  }
+  
+  console.log('Enviando solicitud de eliminación. ID:', messageId);
+  
+  fetch(`/api/delete-message/${messageId}`, {
+    method: 'DELETE',
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Error en la solicitud');
+    }
+    return response.json();
+  })
+  .then(data => {
+    console.log('Datos recibidos:', data);
+    // Actualizar UI
+    setMessages(prevMessages => 
+      prevMessages.filter(msg => msg.message_id.toString() !== messageId.toString())
+    );
+    alert('Mensaje eliminado correctamente');
+  })
+  .catch(error => {
+    console.error('Error completo:', error);
+    alert('Error al eliminar mensaje: ' + error.message);
+  });
+};
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -614,78 +691,120 @@ const Messages = ({ conversationId }) => {
 
 {messages.length > 0 ? (
   messages.map((msg) => (
-    <ListItem
-      key={msg.message_id}
-      ref={(el) => messageRefs.current[msg.message_id] = el} // Guardar referencia al elemento
+    <ListItem 
+  key={msg.message_id}
+  ref={(el) => messageRefs.current[msg.message_id] = el}
+  sx={{
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: msg.sender === 'Sharky' ? 'flex-end' : 'flex-start',
+    px: 2,
+    py: 1,
+    ...(highlightedMessageId === msg.message_id && {
+      animation: 'highlight 2s',
+      '@keyframes highlight': {
+        '0%': { backgroundColor: 'rgba(66, 165, 245, 0.3)' },
+        '100%': { backgroundColor: 'transparent' }
+      }
+    })
+  }}
+>
+  <Box
+    sx={{
+      position: 'relative',
+      maxWidth: '70%',
+      '&:hover .message-actions': {
+        opacity: 1,
+      },
+    }}
+  >
+    {/* Action buttons container */}
+    <Box 
+      className="message-actions"
       sx={{
+        position: 'absolute',
+        right: msg.sender === 'Sharky' ? 'auto' : '-30px',
+        left: msg.sender === 'Sharky' ? '-30px' : 'auto',
+        top: '50%',
+        transform: 'translateY(-50%)',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: msg.sender === 'Sharky' ? 'flex-end' : 'flex-start',
-        px: 2,
-        py: 1,
-        ...(highlightedMessageId === msg.message_id && {
-          animation: 'highlight 2s',
-          '@keyframes highlight': {
-            '0%': { backgroundColor: 'rgba(66, 165, 245, 0.3)' },
-            '100%': { backgroundColor: 'transparent' }
-          }
-        })
+        gap: '4px',
+        opacity: 0,
+        transition: 'opacity 0.2s',
       }}
     >
-              <Box
-                sx={{
-                  position: 'relative',
-                  maxWidth: '70%',
-                  '&:hover .reply-button': {
-                    opacity: 1,
-                  },
-                }}
-              >
-                {/* Botón de respuesta */}
-                <IconButton
-                  className="reply-button"
-                  size="small"
-                  onClick={() => handleReply(msg.message_id)}
-                  sx={{
-                    position: 'absolute',
-                    right: msg.sender === 'Sharky' ? 'auto' : '-30px',
-                    left: msg.sender === 'Sharky' ? '-30px' : 'auto',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    opacity: 0,
-                    transition: 'opacity 0.2s',
-                    bgcolor: 'white',
-                    boxShadow: 1,
-                    '&:hover': {
-                      bgcolor: 'grey.100',
-                    },
-                  }}
-                >
-                  <ReplyIcon fontSize="small" />
-                </IconButton>
-
-                {/* Burbuja del mensaje con box-shadow */}
-                <Box
-                  sx={{
-                    backgroundColor: msg.sender === 'Sharky' ? '#003491' : '#ffffff',
-                    color: msg.sender === 'Sharky' ? '#fff' : 'inherit',
-                    borderRadius: '25px',
-                    p: 2,
-                    wordBreak: 'break-word',
-                    boxShadow: '2px 2px 10px #0202027d',
-                  }}
-                >
-                  {renderMessageContent(msg)}
-
-                  <Typography 
-                    variant="caption" 
-                    sx={{ display: 'block', textAlign: 'right', mt: 1, opacity: 0.8 }}
-                  >
-                    {new Date(msg.sent_at).toLocaleString()}
-                  </Typography>
-                </Box>
-              </Box>
-            </ListItem>
+      {/* Edit button - only for Sharky's messages */}
+      {msg.sender === 'Sharky' && (
+        <IconButton
+          size="small"
+          onClick={() => handleEditMessage(msg.message_id, msg.message)}
+          sx={{
+            bgcolor: 'white',
+            boxShadow: 1,
+            '&:hover': {
+              bgcolor: 'grey.100',
+            },
+          }}
+        >
+          <EditIcon fontSize="small" />
+        </IconButton>
+      )}
+      
+      {/* Reply button */}
+      <IconButton
+        size="small"
+        onClick={() => handleReply(msg.message_id)}
+        sx={{
+          bgcolor: 'white',
+          boxShadow: 1,
+          '&:hover': {
+            bgcolor: 'grey.100',
+          },
+        }}
+      >
+        <ReplyIcon fontSize="small" />
+      </IconButton>
+      
+      {/* Delete button - only for Sharky's messages */}
+      {msg.sender === 'Sharky' && (
+        <IconButton
+          size="small"
+          onClick={() => handleDeleteMessage(msg.message_id)}
+          sx={{
+            bgcolor: 'white',
+            boxShadow: 1,
+            '&:hover': {
+              bgcolor: 'grey.100',
+            },
+          }}
+        >
+          <DeleteIcon fontSize="small" />
+        </IconButton>
+      )}
+    </Box>
+    
+    {/* Message bubble */}
+    <Box
+      sx={{
+        backgroundColor: msg.sender === 'Sharky' ? '#003491' : '#ffffff',
+        color: msg.sender === 'Sharky' ? '#fff' : 'inherit',
+        borderRadius: '25px',
+        p: 2,
+        wordBreak: 'break-word',
+        boxShadow: '2px 2px 10px #0202027d',
+      }}
+    >
+      {renderMessageContent(msg)}
+      <Typography 
+        variant="caption"
+        sx={{ display: 'block', textAlign: 'right', mt: 1, opacity: 0.8 }}
+      >
+        {new Date(msg.sent_at).toLocaleString()}
+      </Typography>
+    </Box>
+  </Box>
+</ListItem>
           ))
         ) : (
           <Typography variant="body1" sx={{ textAlign: 'center', mt: 2 }}>
