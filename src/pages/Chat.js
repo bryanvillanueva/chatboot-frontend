@@ -26,6 +26,24 @@ const Chat = ({ onSelectConversation }) => {
     if (onSelectConversation) onSelectConversation(conversationId);
   };
 
+  // Función para determinar qué mostrar como último mensaje según su tipo
+  const getLastMessagePreview = (conversation) => {
+    if (!conversation.last_message_type) {
+      return conversation.last_message || 'Sin mensajes';
+    }
+    
+    switch (conversation.last_message_type) {
+      case 'audio':
+        return 'Mensaje de voz';
+      case 'image':
+        return 'Archivo de imagen';
+      case 'document':
+        return 'Documento adjunto';
+      default:
+        return conversation.last_message || 'Sin mensajes';
+    }
+  };
+
   return (
     <Box
       sx={{
@@ -107,9 +125,7 @@ const Chat = ({ onSelectConversation }) => {
                         color: conv.last_message_sender && conv.last_message_sender !== 'Sharky' ? '#2b91ff' : 'inherit'
                       }}
                     >
-                      {conv.last_message_type === 'audio'
-                        ? 'Mensaje de voz'
-                        : (conv.last_message || 'Sin mensajes')}
+                      {getLastMessagePreview(conv)}
                     </Typography>
                   }
                 />
