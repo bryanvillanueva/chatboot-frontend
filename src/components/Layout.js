@@ -23,7 +23,7 @@ const Layout = ({ children }) => {
           [`& .MuiDrawer-paper`]: { 
             width: drawerWidth, 
             boxSizing: 'border-box', 
-            background: "#2B91FF", 
+            background: "#003491", 
             color: '#fff' 
           },
         }}

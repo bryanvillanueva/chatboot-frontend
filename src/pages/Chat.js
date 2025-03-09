@@ -1,14 +1,31 @@
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, List, ListItem, ListItemAvatar, Avatar, ListItemText, Divider, Badge } from '@mui/material';
+import { 
+  Box, 
+  Typography, 
+  List, 
+  ListItem, 
+  ListItemAvatar, 
+  Avatar, 
+  ListItemText, 
+  Divider, 
+  Badge,
+  TextField,
+  InputAdornment,
+  IconButton
+} from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import { fetchConversations } from '../services/webhookService';
 import Messages from '../components/Messages';
 import Navbar from '../components/Navbar';
+import SearchIcon from '@mui/icons-material/Search';
+import ClearIcon from '@mui/icons-material/Clear';
 
 const Chat = ({ onSelectConversation }) => {
   const [conversations, setConversations] = useState([]);
+  const [filteredConversations, setFilteredConversations] = useState([]);
   const [selectedConversationId, setSelectedConversationId] = useState(null);
   const [selectedConversationName, setSelectedConversationName] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const theme = useTheme();
 
   useEffect(() => {
@@ -16,6 +33,7 @@ const Chat = ({ onSelectConversation }) => {
       try {
         const data = await fetchConversations();
         setConversations(data);
+        setFilteredConversations(data);
       } catch (error) {
         console.error('Error al obtener conversaciones:', error);
       }
@@ -23,10 +41,41 @@ const Chat = ({ onSelectConversation }) => {
     getConversations();
   }, []);
 
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredConversations(conversations);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase();
+    const filtered = conversations.filter(conv => {
+      // Buscar por nombre del cliente
+      if (conv.client_name && conv.client_name.toLowerCase().includes(query)) {
+        return true;
+      }
+      // Buscar por número de teléfono
+      if (conv.phone_number && conv.phone_number.includes(query)) {
+        return true;
+      }
+      // Buscar por contenido de último mensaje
+      if (conv.last_message && conv.last_message.toLowerCase().includes(query)) {
+        return true;
+      }
+      return false;
+    });
+
+    setFilteredConversations(filtered);
+  }, [searchQuery, conversations]);
+
   const handleSelectConversation = (conversationId, clientName) => {
     setSelectedConversationId(conversationId);
     setSelectedConversationName(clientName || 'Sin nombre');
     if (onSelectConversation) onSelectConversation(conversationId);
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery('');
+    setFilteredConversations(conversations);
   };
 
   // Función para determinar qué mostrar como último mensaje según su tipo
@@ -90,9 +139,49 @@ const Chat = ({ onSelectConversation }) => {
             flexDirection: 'column',
           }}
         >
-          <Typography variant="h6" sx={{ p: 2, margin: 0 }}>
-            Chats
-          </Typography>
+          {/* Barra de búsqueda en lugar del título */}
+          <Box sx={{ p: 2, pb: 1 }}>
+            <TextField
+              fullWidth
+              size="small"
+              placeholder="Buscar en los chats"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon color="action" />
+                  </InputAdornment>
+                ),
+                endAdornment: searchQuery && (
+                  <InputAdornment position="end">
+                    <IconButton
+                      size="small"
+                      onClick={handleClearSearch}
+                      edge="end"
+                      aria-label="clear search"
+                    >
+                      <ClearIcon fontSize="small" />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+                sx: {
+                  borderRadius: 2,
+                  bgcolor: '#f0f2f5',
+                  '& fieldset': {
+                    borderColor: 'transparent',
+                  },
+                  '&:hover fieldset': {
+                    borderColor: 'transparent',
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: '#003491',
+                  }
+                }
+              }}
+            />
+          </Box>
+          
           <List
             sx={{
               flex: 1,
@@ -106,56 +195,64 @@ const Chat = ({ onSelectConversation }) => {
               },
             }}
           >
-            {conversations.map((conv) => (
-              <React.Fragment key={conv.conversation_id}>
-                <ListItem
-                  button
-                  onClick={() => handleSelectConversation(conv.conversation_id, conv.client_name)}
-                  sx={{
-                    backgroundColor: selectedConversationId === conv.conversation_id ? theme.palette.action.selected : 'inherit',
-                    '&:hover': {
-                      backgroundColor: theme.palette.action.hover,
-                    },
-                    transition: 'background 0.2s ease-in-out',
-                    padding: '10px 16px',
-                  }}
-                >
-                  <ListItemAvatar>
-                    <Badge
-                      variant="dot"
-                      color="primary"
-                      invisible={!conv.last_message_sender || conv.last_message_sender === 'Sharky'}
-                      anchorOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'right',
-                      }}
-                    >
-                      <Avatar sx={{ bgcolor: theme.palette.primary.light }}>
-                        {conv.client_name ? conv.client_name.charAt(0) : '?'}
-                      </Avatar>
-                    </Badge>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={conv.client_name || 'Sin nombre'}
-                    secondary={
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          maxWidth: '160px',
-                          color: conv.last_message_sender && conv.last_message_sender !== 'Sharky' ? '#2b91ff' : 'inherit',
+            {filteredConversations.length > 0 ? (
+              filteredConversations.map((conv) => (
+                <React.Fragment key={conv.conversation_id}>
+                  <ListItem
+                    button
+                    onClick={() => handleSelectConversation(conv.conversation_id, conv.client_name)}
+                    sx={{
+                      backgroundColor: selectedConversationId === conv.conversation_id ? theme.palette.action.selected : 'inherit',
+                      '&:hover': {
+                        backgroundColor: theme.palette.action.hover,
+                      },
+                      transition: 'background 0.2s ease-in-out',
+                      padding: '10px 16px',
+                    }}
+                  >
+                    <ListItemAvatar>
+                      <Badge
+                        variant="dot"
+                        color="primary"
+                        invisible={!conv.last_message_sender || conv.last_message_sender === 'Sharky'}
+                        anchorOrigin={{
+                          vertical: 'bottom',
+                          horizontal: 'right',
                         }}
                       >
-                        {getLastMessagePreview(conv)}
-                      </Typography>
-                    }
-                  />
-                </ListItem>
-                <Divider />
-              </React.Fragment>
-            ))}
+                        <Avatar sx={{ bgcolor: theme.palette.primary.light }}>
+                          {conv.client_name ? conv.client_name.charAt(0) : '?'}
+                        </Avatar>
+                      </Badge>
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={conv.client_name || 'Sin nombre'}
+                      secondary={
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            maxWidth: '160px',
+                            color: conv.last_message_sender && conv.last_message_sender !== 'Sharky' ? '#003491' : 'inherit',
+                          }}
+                        >
+                          {getLastMessagePreview(conv)}
+                        </Typography>
+                      }
+                    />
+                  </ListItem>
+                  <Divider />
+                </React.Fragment>
+              ))
+            ) : (
+              <Box sx={{ p: 2, textAlign: 'center' }}>
+                <Typography variant="body2" color="text.secondary">
+                  No se encontraron resultados
+                </Typography>
+              </Box>
+            )}
           </List>
         </Box>
 
