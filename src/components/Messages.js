@@ -12,7 +12,12 @@ import {
   Switch,
   Button,
   Modal,
-  Paper
+  Paper,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from '@mui/material';
 import { 
   Reply as ReplyIcon, 
@@ -21,10 +26,17 @@ import {
   Close as CloseIcon,
   Refresh as RefreshIcon,
   Delete as DeleteIcon,
-Edit as EditIcon, 
+  Edit as EditIcon, 
 } from '@mui/icons-material';
 import PhotoCameraIcon from '@mui/icons-material/PhotoCamera';
 import DescriptionIcon from '@mui/icons-material/Description';
+import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf';
+import ArticleIcon from '@mui/icons-material/Article';
+import TableChartIcon from '@mui/icons-material/TableChart';
+import SlideshowIcon from '@mui/icons-material/Slideshow';
+import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import GetAppIcon from '@mui/icons-material/GetApp';
 import EmojiPicker from 'emoji-picker-react';
 import { fetchMessages } from '../services/webhookService';
 import { useTheme } from '@mui/material/styles';
@@ -74,6 +86,8 @@ const MessageImage = ({ mediaId, onClick }) => {
 
   // Info Drawer
 
+  
+
   return (
     <Box sx={{ maxWidth: '100%', mt: 1, mb: 1 }}>   
       {loading && (
@@ -113,6 +127,172 @@ const MessageImage = ({ mediaId, onClick }) => {
           onError={handleImageError}
           onClick={onClick || (() => window.open(imageSrc, '_blank'))}
         />
+      )}
+    </Box>
+  );
+};
+// Componente para renderizar documentos
+const MessageDocument = ({ mediaId, fileName }) => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
+  
+  // URL del documento a través del proxy
+  const documentProxyUrl = `https://chatboot-webhook-production.up.railway.app/api/download-document/${mediaId}`;
+  
+  // Formato del nombre de archivo para mostrar
+  const displayFileName = fileName || 'Documento adjunto';
+  
+  // Determinar el icono basado en la extensión del archivo
+  const getFileIcon = () => {
+    if (!fileName) return <DescriptionIcon fontSize="large" />;
+    
+    const extension = fileName.toLowerCase().split('.').pop();
+    
+    switch (extension) {
+      case 'pdf':
+        return <PictureAsPdfIcon fontSize="large" />;
+      case 'doc':
+      case 'docx':
+        return <ArticleIcon fontSize="large" />;
+      case 'xls':
+      case 'xlsx':
+        return <TableChartIcon fontSize="large" />;
+      case 'ppt':
+      case 'pptx':
+        return <SlideshowIcon fontSize="large" />;
+      default:
+        return <InsertDriveFileIcon fontSize="large" />;
+    }
+  };
+  
+  // Verificar si el documento está disponible
+  useEffect(() => {
+    const checkDocumentAvailability = async () => {
+      try {
+        setLoading(true);
+        // Solo hacemos una petición HEAD para verificar si el documento está disponible
+        await axios.head(`${documentProxyUrl}?v=${retryCount}`);
+        setLoading(false);
+        setError(null);
+      } catch (err) {
+        setLoading(false);
+        setError('No se pudo acceder al documento');
+      }
+    };
+    
+    checkDocumentAvailability();
+  }, [documentProxyUrl, retryCount]);
+  
+  // Forzar recarga del documento
+  const handleRefresh = () => {
+    setLoading(true);
+    setError(null);
+    setRetryCount(prev => prev + 1);
+  };
+  
+  // Abrir el documento en una nueva pestaña
+  const handleOpenDocument = () => {
+    window.open(`${documentProxyUrl}?v=${retryCount}`, '_blank');
+  };
+  
+  // Descargar el documento
+  const handleDownloadDocument = () => {
+    const link = document.createElement('a');
+    link.href = `${documentProxyUrl}?v=${retryCount}&download=true`;
+    link.download = displayFileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  return (
+    <Box sx={{ 
+      display: 'flex', 
+      flexDirection: 'column', 
+      alignItems: 'center',
+      p: 1,
+      mt: 1, 
+      mb: 1,
+      bgcolor: 'rgba(0, 0, 0, 0.04)',
+      borderRadius: '8px',
+      width: '100%',
+      maxWidth: '240px'
+    }}>
+      {loading ? (
+        <CircularProgress size={24} sx={{ my: 1 }} />
+      ) : error ? (
+        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, p: 1 }}>
+          <Typography variant="body2" color="error">
+            {error}
+          </Typography>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            size="small" 
+            onClick={handleRefresh}
+            startIcon={<RefreshIcon />}
+          >
+            Reintentar
+          </Button>
+        </Box>
+      ) : (
+        <>
+          <Box sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            alignItems: 'center',
+            width: '100%'
+          }}>
+            {/* Icono y nombre del documento */}
+            <Box sx={{ color: 'primary.main', my: 1 }}>
+              {getFileIcon()}
+            </Box>
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                textAlign: 'center', 
+                mb: 1,
+                maxWidth: '100%',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              {displayFileName}
+            </Typography>
+            
+            {/* Botones de acción */}
+            <Box sx={{ 
+              display: 'flex', 
+              gap: 1, 
+              mt: 1,
+              width: '100%',
+              justifyContent: 'center'
+            }}>
+              <Button 
+                variant="contained" 
+                color="primary" 
+                size="small" 
+                onClick={handleOpenDocument}
+                startIcon={<VisibilityIcon />}
+                sx={{ flexGrow: 1, maxWidth: '50%' }}
+              >
+                Ver
+              </Button>
+              <Button 
+                variant="outlined" 
+                color="primary" 
+                size="small" 
+                onClick={handleDownloadDocument}
+                startIcon={<GetAppIcon />}
+                sx={{ flexGrow: 1, maxWidth: '50%' }}
+              >
+                Descargar
+              </Button>
+            </Box>
+          </Box>
+        </>
       )}
     </Box>
   );
@@ -192,6 +372,8 @@ const Messages = ({ conversationId }) => {
   const [infoDrawerOpen, setInfoDrawerOpen] = useState(false);
   const [highlightedMessageId, setHighlightedMessageId] = useState(null);
   const messageRefs = useRef({}); // Para almacenar referencias a los mensajes
+  const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+  const [messageToDelete, setMessageToDelete] = useState(null);
 
   const handleOpenInfoDrawer = () => {
     setInfoDrawerOpen(true);
@@ -481,36 +663,34 @@ const handleEditMessage = (messageId, currentMessage) => {
 };
 
 // Función para eliminar mensaje
-const handleDeleteMessage = (messageId) => {
-  const confirmDelete = window.confirm('¿Estás seguro de que deseas eliminar este mensaje?');
+const handleDeleteMessageRequest = (messageId) => {
+  setMessageToDelete(messageId);
+  setOpenDeleteDialog(true);
+};
+
+const confirmDeleteMessage = () => {
+  if (!messageToDelete) return;
   
-  if (!confirmDelete) {
-    return;
-  }
+  console.log('Enviando solicitud de eliminación. ID:', messageToDelete);
   
-  console.log('Enviando solicitud de eliminación. ID:', messageId);
-  
-  fetch(`/api/delete-message/${messageId}`, {
-    method: 'DELETE',
-  })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error('Error en la solicitud');
-    }
-    return response.json();
-  })
-  .then(data => {
-    console.log('Datos recibidos:', data);
-    // Actualizar UI
-    setMessages(prevMessages => 
-      prevMessages.filter(msg => msg.message_id.toString() !== messageId.toString())
-    );
-    alert('Mensaje eliminado correctamente');
-  })
-  .catch(error => {
-    console.error('Error completo:', error);
-    alert('Error al eliminar mensaje: ' + error.message);
-  });
+  axios.delete(`https://chatboot-webhook-production.up.railway.app/api/delete-message/${messageToDelete}`)
+    .then(response => {
+      console.log('Datos recibidos:', response.data);
+      // Actualizar UI
+      setMessages(prevMessages => 
+        prevMessages.filter(msg => msg.message_id.toString() !== messageToDelete.toString())
+      );
+      // Opcional: puedes mostrar un Snackbar en lugar de un alert
+      alert('Mensaje eliminado correctamente');
+    })
+    .catch(error => {
+      console.error('Error completo:', error);
+      alert('Error al eliminar mensaje: ' + (error.response?.data?.error || error.message));
+    })
+    .finally(() => {
+      setOpenDeleteDialog(false);
+      setMessageToDelete(null);
+    });
 };
 
   const handleKeyPress = (e) => {
@@ -599,19 +779,10 @@ const handleDeleteMessage = (messageId) => {
         );
       case 'document':
         return (
-          <Box>
-            <Typography variant="caption" display="block" sx={{ mb: 1, fontStyle: 'italic' }}>
-              📄 Documento adjunto
-            </Typography>
-            <Button 
-              variant="outlined" 
-              size="small" 
-              startIcon={<DescriptionIcon />}
-              onClick={() => window.open(msg.media_url, '_blank')}
-            >
-              Ver documento
-            </Button>
-          </Box>
+          <MessageDocument 
+            mediaId={msg.media_id} 
+            fileName={"Documento Adjunto"} // Usar el campo message como nombre de archivo
+          />
         );
       default:
         return <Typography variant="body1">{msg.message}</Typography>;
@@ -627,7 +798,7 @@ const handleDeleteMessage = (messageId) => {
       width: '100%',
       overflow: 'hidden',
       position: 'relative',
-      backgroundImage: `url('https://i.pinimg.com/736x/8c/98/99/8c98994518b575bfd8c949e91d20548b.jpg')`,
+      backgroundImage: `url('https://sharkagency.co/wallpaper-wp.jpg')`,
       backgroundSize: 'auto',
       backgroundPosition: 'center',
       transition: 'padding-right 0.3s ease', // Añadir transición suave
@@ -720,69 +891,50 @@ const handleDeleteMessage = (messageId) => {
   >
     {/* Action buttons container */}
     <Box 
-      className="message-actions"
-      sx={{
-        position: 'absolute',
-        right: msg.sender === 'Sharky' ? 'auto' : '-30px',
-        left: msg.sender === 'Sharky' ? '-30px' : 'auto',
-        top: '50%',
-        transform: 'translateY(-50%)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '4px',
-        opacity: 0,
-        transition: 'opacity 0.2s',
-      }}
-    >
-      {/* Edit button - only for Sharky's messages */}
-      {msg.sender === 'Sharky' && (
-        <IconButton
-          size="small"
-          onClick={() => handleEditMessage(msg.message_id, msg.message)}
-          sx={{
-            bgcolor: 'white',
-            boxShadow: 1,
-            '&:hover': {
-              bgcolor: 'grey.100',
-            },
-          }}
-        >
-          <EditIcon fontSize="small" />
-        </IconButton>
-      )}
-      
-      {/* Reply button */}
-      <IconButton
-        size="small"
-        onClick={() => handleReply(msg.message_id)}
-        sx={{
-          bgcolor: 'white',
-          boxShadow: 1,
-          '&:hover': {
-            bgcolor: 'grey.100',
-          },
-        }}
-      >
-        <ReplyIcon fontSize="small" />
-      </IconButton>
-      
-      {/* Delete button - only for Sharky's messages */}
-      {msg.sender === 'Sharky' && (
-        <IconButton
-          size="small"
-          onClick={() => handleDeleteMessage(msg.message_id)}
-          sx={{
-            bgcolor: 'white',
-            boxShadow: 1,
-            '&:hover': {
-              bgcolor: 'grey.100',
-            },
-          }}
-        >
-          <DeleteIcon fontSize="small" />
-        </IconButton>
-      )}
-    </Box>
+  className="message-actions"
+  sx={{
+    position: 'absolute',
+    right: msg.sender === 'Sharky' ? 'auto' : '-30px',
+    left: msg.sender === 'Sharky' ? '-30px' : 'auto',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    opacity: 0,
+    transition: 'opacity 0.2s',
+  }}
+>  
+  {/* Reply button */}
+  <IconButton
+    size="small"
+    onClick={() => handleReply(msg.message_id)}
+    sx={{
+      bgcolor: 'white',
+      boxShadow: 1,
+      '&:hover': {
+        bgcolor: 'grey.100',
+      },
+    }}
+  >
+    <ReplyIcon fontSize="small" />
+  </IconButton>
+  
+  {/* Delete button - para todos los mensajes, no solo Sharky */}
+  <IconButton
+  size="small"
+  onClick={() => handleDeleteMessageRequest(msg.message_id)}
+  sx={{
+    bgcolor: 'white',
+    boxShadow: 1,
+    '&:hover': {
+      bgcolor: 'grey.100',
+    },
+  }}
+>
+  <DeleteIcon fontSize="small" />
+</IconButton>
+</Box>
     
     {/* Message bubble */}
     <Box
@@ -1051,6 +1203,32 @@ const handleDeleteMessage = (messageId) => {
         conversationId={conversationId}
         onMessageClick={handleMessageClick}
       />
+
+      {/* Delete Confirmation Dialog - */}
+            <Dialog
+        open={openDeleteDialog}
+        onClose={() => setOpenDeleteDialog(false)}
+        aria-labelledby="alert-dialog-title"
+        aria-describedby="alert-dialog-description"
+      >
+        <DialogTitle id="alert-dialog-title">
+          {"¿Eliminar este mensaje?"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-description">
+            Esta acción eliminará solamente tu versión del mensaje. 
+            El mensaje original seguirá existiendo para otros usuarios.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenDeleteDialog(false)} color="primary">
+            Cancelar
+          </Button>
+          <Button onClick={confirmDeleteMessage} sx={{color: 'white', backgroundColor: '#d32f2f', '&:hover': {backgroundColor: '#b71c1c'},}} autoFocus>
+            Eliminar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
