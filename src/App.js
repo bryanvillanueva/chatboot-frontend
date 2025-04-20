@@ -4,8 +4,8 @@ import Dashboard from './pages/Dashboard';
 import Chat from './pages/Chat';
 import Appointments from './pages/Appointments';
 import Layout from './components/Layout';
-import Login from './pages/Login';
-
+import Students from './components/Students'; // Importamos el componente Students
+import MoodleUsers from './components/moodle/MoodleUsers'; // Importamos el componente MoodleUsers
 
 const App = () => {
   useEffect(() => {
@@ -23,6 +23,8 @@ const App = () => {
           <Route path="/" element={<Dashboard pageTitle="Dashboard"/>} />
           <Route path="/chat" element={<Chat pageTitle="Chat"/>} />
           <Route path="/appointments" element={<Appointments pageTitle="Appointments"/>} />
+          <Route path="/components/moodle" element={<MoodleUsers pageTitle="Consulta Moodle"/>} />
+          <Route path="/components/students" element={<Students pageTitle="Registro Estudiantes"/>} />
         </Routes>
       </Layout>
     </Router>
