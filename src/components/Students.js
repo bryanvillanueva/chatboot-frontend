@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import {
   Box,
@@ -20,12 +20,11 @@ import {
   useMediaQuery,
   useTheme,
   alpha,
-  Table,
-  TableHead,
-  TableRow,
-  TableCell,
-  TableBody,
-  TableContainer
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
@@ -35,6 +34,7 @@ import PhoneIcon from '@mui/icons-material/Phone';
 import HomeIcon from '@mui/icons-material/Home';
 import BadgeIcon from '@mui/icons-material/Badge';
 import LocationOnIcon from '@mui/icons-material/LocationOn';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import Navbar from '../components/Navbar';
 
 const Students = ({ pageTitle = "Registro de Estudiantes" }) => {
@@ -57,13 +57,14 @@ const Students = ({ pageTitle = "Registro de Estudiantes" }) => {
     country: 'Colombia'
   });
   const [loading, setLoading] = useState(false);
-
-  // Estado de la tabla
-  const [students, setStudents] = useState([]);
-  const [loadingTable, setLoadingTable] = useState(false);
   
-  // Estado para seguir qué estudiantes están en proceso de inserción en Moodle
-  const [loadingMoodle, setLoadingMoodle] = useState({});
+  // Diálogo de credenciales de Moodle
+  const [credentialsDialog, setCredentialsDialog] = useState(false);
+  const [credentials, setCredentials] = useState({
+    username: '',
+    password: '',
+    studentId: null
+  });
 
   // Snackbar
   const [snackbar, setSnackbar] = useState({
@@ -72,53 +73,93 @@ const Students = ({ pageTitle = "Registro de Estudiantes" }) => {
     severity: 'success'
   });
 
-  // Carga inicial de la lista
-  useEffect(() => {
-    fetchStudents();
-  }, []);
-
-  const fetchStudents = async () => {
-    setLoadingTable(true);
-    try {
-      const { data } = await axios.get('https://chatboot-webhook-production.up.railway.app/students');
-      setStudents(data);
-    } catch (err) {
-      console.error('Error al cargar estudiantes:', err);
-      setSnackbar({
-        open: true,
-        message: 'Error al cargar la lista de estudiantes',
-        severity: 'error'
-      });
-    } finally {
-      setLoadingTable(false);
-    }
-  };
-
   const handleChange = e => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleCopyToClipboard = text => {
+    navigator.clipboard.writeText(text);
+    setSnackbar({
+      open: true,
+      message: 'Copiado al portapapeles',
+      severity: 'success'
+    });
+  };
+
+  const registerStudentInMoodle = async (studentId) => {
+    try {
+      setLoading(true);
+      const response = await axios.post(`https://chatboot-webhook-production.up.railway.app/api/moodle/students/${studentId}/create`);
+      
+      if (response.data && response.data.password) {
+        // Guardar credenciales para mostrar en el diálogo
+        setCredentials({
+          username: response.data.moodleResponse?.username || form.email.split('@')[0],
+          password: response.data.password,
+          studentId: studentId
+        });
+        
+        setCredentialsDialog(true);
+        
+        setSnackbar({ 
+          open: true, 
+          message: 'Estudiante registrado y creado en Moodle correctamente', 
+          severity: 'success' 
+        });
+        
+        return true;
+      } else {
+        setSnackbar({
+          open: true,
+          message: 'Estudiante registrado pero hubo un problema al crear usuario en Moodle',
+          severity: 'warning'
+        });
+        return false;
+      }
+    } catch (error) {
+      console.error('Error al insertar en Moodle:', error);
+      setSnackbar({
+        open: true,
+        message: `Error al crear usuario en Moodle: ${error.response?.data?.error || error.message}`,
+        severity: 'error'
+      });
+      return false;
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSubmit = async e => {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post('https://chatboot-webhook-production.up.railway.app/students', form);
-      setSnackbar({ open: true, message: 'Estudiante registrado correctamente', severity: 'success' });
-      setForm({
-        first_name: '',
-        last_name: '',
-        identification_type: '',
-        identification_number: '',
-        email: '',
-        phone: '',
-        gender: '',
-        birth_date: '',
-        address: '',
-        city: '',
-        department: '',
-        country: 'Colombia'
-      });
-      fetchStudents(); // refrescar tabla
+      // 1. Registrar estudiante en la base de datos
+      const response = await axios.post('https://chatboot-webhook-production.up.railway.app/students', form);
+      
+      if (response.data && response.data.id) {
+        // 2. Crear el usuario en Moodle
+        const moodleSuccess = await registerStudentInMoodle(response.data.id);
+        
+        // Limpiar formulario solo si todo salió bien
+        if (moodleSuccess) {
+          setForm({
+            first_name: '',
+            last_name: '',
+            identification_type: '',
+            identification_number: '',
+            email: '',
+            phone: '',
+            gender: '',
+            birth_date: '',
+            address: '',
+            city: '',
+            department: '',
+            country: 'Colombia'
+          });
+        }
+      } else {
+        throw new Error('No se pudo obtener el ID del estudiante registrado');
+      }
     } catch (error) {
       console.error(error);
       setSnackbar({
@@ -128,41 +169,6 @@ const Students = ({ pageTitle = "Registro de Estudiantes" }) => {
       });
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleInsertMoodle = async (student) => {
-    try {
-      // Marcar este estudiante específico como "cargando"
-      setLoadingMoodle(prev => ({ ...prev, [student.id]: true }));
-      
-      // Usar el endpoint correcto que ya está definido en el backend
-      const response = await axios.post(`https://chatboot-webhook-production.up.railway.app/api/moodle/students/${student.id}/create`);
-      
-      // Si la respuesta incluye una contraseña temporal, mostrarla
-      if (response.data && response.data.password) {
-        setSnackbar({ 
-          open: true, 
-          message: `Estudiante insertado en Moodle correctamente. Usuario: ${response.data.moodleResponse?.username || student.email.split('@')[0]}. Contraseña temporal: ${response.data.password}`, 
-          severity: 'success' 
-        });
-      } else {
-        setSnackbar({
-          open: true,
-          message: `Estudiante insertado en Moodle correctamente: ${student.first_name} ${student.last_name}`,
-          severity: 'success'
-        });
-      }
-    } catch (err) {
-      console.error('Error al insertar en Moodle:', err);
-      setSnackbar({
-        open: true,
-        message: `Error al insertar en Moodle: ${err.response?.data || err.message}`,
-        severity: 'error'
-      });
-    } finally {
-      // Cuando termine, quitar el estado de carga para este estudiante
-      setLoadingMoodle(prev => ({ ...prev, [student.id]: false }));
     }
   };
 
@@ -229,7 +235,8 @@ const Students = ({ pageTitle = "Registro de Estudiantes" }) => {
           </Box>
 
           <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            Complete el formulario con los datos del estudiante. Todos los campos marcados con * son obligatorios.
+            Complete el formulario con los datos del estudiante. El estudiante será registrado en la base de datos y
+            creado automáticamente en Moodle. Todos los campos marcados con * son obligatorios.
           </Typography>
           <Divider sx={{ my: 3 }} />
 
@@ -302,6 +309,7 @@ const Students = ({ pageTitle = "Registro de Estudiantes" }) => {
                 <TextField fullWidth required label={getFieldLabel('email')} name="email" type="email"
                   value={form.email} onChange={handleChange}
                   InputProps={{ startAdornment: <InputAdornment position="start"><EmailIcon /></InputAdornment> }}
+                  helperText="Este email se usará como nombre de usuario en Moodle"
                   sx={{ '& .MuiOutlinedInput-root': {
                     '&:hover fieldset': { borderColor: alpha('#003491', 0.5) },
                     '&.Mui-focused fieldset': { borderColor: '#003491' }
@@ -367,77 +375,85 @@ const Students = ({ pageTitle = "Registro de Estudiantes" }) => {
                       borderRadius: '8px',
                       px: 3, py: 1
                     }}>
-                    {loading ? 'Registrando...' : 'Registrar Estudiante'}
+                    {loading ? 'Registrando...' : 'Registrar en Sistema y Moodle'}
                   </Button>
                 </Box>
               </Grid>
             </Grid>
           </form>
         </Paper>
-
-        {/* --- TABLA DE ESTUDIANTES --- */}
-        <Box sx={{ mt: 4 }}>
-          <Typography variant="h6" gutterBottom>Lista de Estudiantes</Typography>
-          {loadingTable ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <TableContainer component={Paper} sx={{ boxShadow: '0 2px 10px rgba(0,0,0,0.08)' }}>
-              <Table size={isMobile ? "small" : "medium"}>
-                <TableHead sx={{ backgroundColor: alpha('#003491', 0.1) }}>
-                  <TableRow>
-                    <TableCell>Nombre</TableCell>
-                    <TableCell>Apellido</TableCell>
-                    <TableCell>Cédula</TableCell>
-                    <TableCell>Email</TableCell>
-                    <TableCell align="right">Acciones</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {students.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={5} align="center" sx={{ py: 3 }}>
-                        No hay estudiantes registrados
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    students.map(st => (
-                      <TableRow key={st.id} hover>
-                        <TableCell>{st.first_name}</TableCell>
-                        <TableCell>{st.last_name}</TableCell>
-                        <TableCell>{st.identification_number}</TableCell>
-                        <TableCell>{st.email}</TableCell>
-                        <TableCell align="right">
-                          <Button 
-                            size="small" 
-                            variant="outlined"
-                            disabled={loadingMoodle[st.id]}
-                            onClick={() => handleInsertMoodle(st)}
-                            sx={{
-                              borderColor: '#003491',
-                              color: '#003491',
-                              '&:hover': {
-                                borderColor: '#002970',
-                                backgroundColor: alpha('#003491', 0.05)
-                              }
-                            }}
-                          >
-                            {loadingMoodle[st.id] ? (
-                              <CircularProgress size={16} sx={{ mr: 1 }} />
-                            ) : null}
-                            {loadingMoodle[st.id] ? 'Insertando...' : 'Insertar Moodle'}
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          )}
-        </Box>
       </Box>
+
+      {/* Diálogo para mostrar las credenciales de Moodle */}
+      <Dialog 
+        open={credentialsDialog} 
+        onClose={() => setCredentialsDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ bgcolor: '#003491', color: 'white' }}>
+          Credenciales de Moodle
+        </DialogTitle>
+        <DialogContent sx={{ mt: 2 }}>
+          <DialogContentText>
+            El estudiante ha sido registrado correctamente en la base de datos y en Moodle. 
+            Aquí están las credenciales de acceso a Moodle:
+          </DialogContentText>
+          
+          <Box sx={{ mt: 3, p: 2, bgcolor: 'background.default', borderRadius: 1 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Typography variant="subtitle2">Usuario:</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography sx={{ fontFamily: 'monospace', mx: 1 }}>
+                      {credentials.username}
+                    </Typography>
+                    <IconButton 
+                      size="small" 
+                      onClick={() => handleCopyToClipboard(credentials.username)}
+                      sx={{ color: '#003491' }}
+                    >
+                      <ContentCopyIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </Box>
+              </Grid>
+              
+              <Grid item xs={12}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Typography variant="subtitle2">Contraseña:</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Typography sx={{ fontFamily: 'monospace', mx: 1 }}>
+                      {credentials.password}
+                    </Typography>
+                    <IconButton 
+                      size="small" 
+                      onClick={() => handleCopyToClipboard(credentials.password)}
+                      sx={{ color: '#003491' }}
+                    >
+                      <ContentCopyIcon fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </Box>
+              </Grid>
+            </Grid>
+          </Box>
+          
+          <Alert severity="warning" sx={{ mt: 3 }}>
+            Estas son credenciales temporales. El estudiante deberá cambiar su contraseña al ingresar al sistema por primera vez.
+          </Alert>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setCredentialsDialog(false)} 
+            color="primary" 
+            variant="contained"
+          >
+            Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Snackbar */}
       <Snackbar

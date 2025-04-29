@@ -26,6 +26,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 import Navbar from '../Navbar';
+import StudentDetailModal from './StudentDetailModal';
 
 const MoodleUsers = ({ pageTitle = "Usuarios de Moodle" }) => {
   const [users, setUsers] = useState([]);
@@ -35,6 +36,11 @@ const MoodleUsers = ({ pageTitle = "Usuarios de Moodle" }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  
+  // Estado para el modal de detalles de estudiante
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [selectedMoodleUserId, setSelectedMoodleUserId] = useState(null);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -42,8 +48,10 @@ const MoodleUsers = ({ pageTitle = "Usuarios de Moodle" }) => {
     try {
       const response = await axios.get('https://chatboot-webhook-production.up.railway.app/api/moodle/users');
       if (response.data && response.data.users) {
-        setUsers(response.data.users);
-        setFilteredUsers(response.data.users);
+        // Aquí añadimos la búsqueda de los IDs de estudiante correspondientes
+        const usersWithStudentIds = await enrichUsersWithStudentIds(response.data.users);
+        setUsers(usersWithStudentIds);
+        setFilteredUsers(usersWithStudentIds);
       } else {
         setError('La respuesta del servidor no tiene el formato esperado');
       }
@@ -52,6 +60,37 @@ const MoodleUsers = ({ pageTitle = "Usuarios de Moodle" }) => {
       setError('Error al cargar los usuarios. Por favor, intente de nuevo más tarde.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Función para añadir IDs de estudiante a los usuarios de Moodle
+  const enrichUsersWithStudentIds = async (moodleUsers) => {
+    try {
+      // Aquí deberíamos implementar un endpoint que mapee IDs de Moodle con IDs de estudiante
+      // Por ahora, simulamos con una consulta separada a la tabla de estudiantes
+      const studentsResponse = await axios.get('https://chatboot-webhook-production.up.railway.app/students');
+      const students = studentsResponse.data;
+      
+      // Crear un mapa de emails a IDs de estudiante para búsqueda rápida
+      const emailToStudentIdMap = {};
+      students.forEach(student => {
+        if (student.email) {
+          emailToStudentIdMap[student.email.toLowerCase()] = student.id;
+        }
+      });
+      
+      // Añadir IDs de estudiante a los usuarios de Moodle basado en coincidencia de emails
+      return moodleUsers.map(user => {
+        const studentId = user.email ? emailToStudentIdMap[user.email.toLowerCase()] : null;
+        return {
+          ...user,
+          studentId: studentId
+        };
+      });
+    } catch (error) {
+      console.error('Error al enriquecer usuarios con IDs de estudiante:', error);
+      // En caso de error, devolvemos los usuarios originales sin IDs de estudiante
+      return moodleUsers;
     }
   };
 
@@ -86,6 +125,18 @@ const MoodleUsers = ({ pageTitle = "Usuarios de Moodle" }) => {
 
   const handleRefresh = () => {
     fetchUsers();
+  };
+
+  // Función para abrir el modal de detalles de estudiante
+  const handleOpenStudentDetail = (user) => {
+    if (user.studentId) {
+      setSelectedUserId(user.studentId);
+      setSelectedMoodleUserId(user.id);
+      setModalOpen(true);
+    } else {
+      // Si no hay ID de estudiante, podríamos mostrar una alerta o un modal diferente
+      alert('Este usuario de Moodle no está vinculado a un estudiante en el sistema.');
+    }
   };
 
   // Formatear fechas de manera más elegante
@@ -225,8 +276,24 @@ const MoodleUsers = ({ pageTitle = "Usuarios de Moodle" }) => {
                         transition: 'background-color 0.2s',
                         '&:hover': {
                           bgcolor: 'rgba(0, 52, 145, 0.04)'
-                        }
+                        },
+                        // Destacar filas de usuarios vinculados con estudiantes
+                        ...(user.studentId && {
+                          position: 'relative',
+                          '&::after': {
+                            content: '""',
+                            position: 'absolute',
+                            left: 0,
+                            top: 0,
+                            bottom: 0,
+                            width: '4px',
+                            bgcolor: '#003491'
+                          }
+                        }),
+                        // Estilo para filas clickeables
+                        cursor: user.studentId ? 'pointer' : 'default'
                       }}
+                      onClick={() => user.studentId && handleOpenStudentDetail(user)}
                     >
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -239,9 +306,19 @@ const MoodleUsers = ({ pageTitle = "Usuarios de Moodle" }) => {
                               border: '1px solid rgba(0,0,0,0.08)'
                             }}
                           />
-                          <Typography variant="body2" fontWeight={500}>
-                            {user.fullname || 'Sin nombre'}
-                          </Typography>
+                          <Box>
+                            <Typography variant="body2" fontWeight={500}>
+                              {user.fullname || 'Sin nombre'}
+                            </Typography>
+                            {user.studentId && (
+                              <Chip
+                                size="small"
+                                label="Estudiante vinculado"
+                                color="primary"
+                                sx={{ height: 20, fontSize: '0.6rem', mt: 0.5 }}
+                              />
+                            )}
+                          </Box>
                         </Box>
                       </TableCell>
                       <TableCell>{user.id}</TableCell>
@@ -315,6 +392,19 @@ const MoodleUsers = ({ pageTitle = "Usuarios de Moodle" }) => {
           </>
         )}
       </Box>
+
+      {/* Modal de detalles de estudiante */}
+      <StudentDetailModal
+        open={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setSelectedUserId(null);
+          setSelectedMoodleUserId(null);
+        }}
+        studentId={selectedUserId}
+        moodleUserId={selectedMoodleUserId}
+        refreshData={fetchUsers}
+      />
     </>
   );
 };
