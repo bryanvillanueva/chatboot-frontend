@@ -1,10 +1,13 @@
 {
   "files": {
-    "main.js": "/chatboot-frontend/static/js/main.90136136.js",
+    "main.css": "/chatboot-frontend/static/css/main.064d61cb.css",
+    "main.js": "/chatboot-frontend/static/js/main.7071f7c5.js",
     "index.html": "/chatboot-frontend/index.html",
-    "main.90136136.js.map": "/chatboot-frontend/static/js/main.90136136.js.map"
+    "main.064d61cb.css.map": "/chatboot-frontend/static/css/main.064d61cb.css.map",
+    "main.7071f7c5.js.map": "/chatboot-frontend/static/js/main.7071f7c5.js.map"
   },
   "entrypoints": [
-    "static/js/main.90136136.js"
+    "static/css/main.064d61cb.css",
+    "static/js/main.7071f7c5.js"
   ]
 }
