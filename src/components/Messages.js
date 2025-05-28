@@ -767,7 +767,7 @@ const Messages = ({ conversationId }) => {
       display: 'flex', 
       flexDirection: 'column', 
       height: '100%',
-      mt: 8
+      marginTop: 0
     }}>
       {/* Header del chat */}
       <Paper
