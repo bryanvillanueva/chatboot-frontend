@@ -177,11 +177,11 @@ const Chat = ({ onSelectConversation }) => {
   return (
     <Box sx={{
       width: '100%',
-      height: '100vh',
+      height: 'calc(100vh - 64px)',
       overflow: 'hidden',
       display: 'flex',
       flexDirection: 'column',
-      mt: 8
+      marginTop: '60px'
     }}>
       <Navbar 
         pageTitle={selectedConversationId ? `Chat con ${selectedConversationName}` : 'Centro de Mensajes'}
