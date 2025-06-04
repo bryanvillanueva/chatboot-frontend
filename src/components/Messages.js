@@ -54,21 +54,33 @@ import axios from 'axios';
 import CustomAudioPlayer from './customAudioPlayer';
 import InfoDrawer from './InfoDrawer';
 
+// Función para procesar el texto y convertir \n en saltos de línea reales
+const processMessageText = (text) => {
+  if (!text) return '';
+  
+  // Reemplazar \n\n con doble salto de línea y \n con salto de línea simple
+  return text
+    .replace(/\\n\\n/g, '\n\n')  // Doble \n se convierte en doble salto real
+    .replace(/\\n/g, '\n');      // \n simple se convierte en salto simple
+};
+
 // Componente para renderizar imágenes con el endpoint proxy
-const MessageImage = ({ mediaId, onClick }) => {
+// Componente MessageImage modificado para mostrar caption
+const MessageImage = ({ mediaId, caption, onClick }) => {
   const theme = useTheme();
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   
+  // URL del proxy para descargar imágenes
   const imageProxyUrl = `https://chatboot-webhook-production.up.railway.app/api/download-image/${mediaId}`;
   const imageSrc = `${imageProxyUrl}?v=${retryCount}`;
   
   const handleImageLoaded = () => {
     setLoading(false);
-    setError(null);
+    setError(false);
   };
-  
+
   const handleImageError = () => {
     setLoading(false);
     setError('No se pudo cargar la imagen');
@@ -76,13 +88,13 @@ const MessageImage = ({ mediaId, onClick }) => {
   
   const handleRefresh = () => {
     setLoading(true);
-    setError(null);
+    setError(false);
     setRetryCount(prev => prev + 1);
   };
   
   useEffect(() => {
     setLoading(true);
-    setError(null);
+    setError(false);
     setRetryCount(0);
   }, [mediaId]);
 
@@ -127,42 +139,62 @@ const MessageImage = ({ mediaId, onClick }) => {
           </Button>
         </Box>
       ) : (
-        <Box sx={{ position: 'relative', display: 'inline-block' }}>
-          <img 
-            src={imageSrc}
-            alt="Message attachment" 
-            style={{ 
-              maxWidth: '300px',
-              maxHeight: '200px',
-              borderRadius: '12px',
-              cursor: 'pointer',
-              display: loading ? 'none' : 'block',
-              objectFit: 'cover',
-              border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-              transition: 'transform 0.2s ease',
-            }}
-            onLoad={handleImageLoaded}
-            onError={handleImageError}
-            onClick={onClick || (() => window.open(imageSrc, '_blank'))}
-            onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
-            onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
-          />
-          
-          {/* Overlay con icono de zoom */}
-          <Box sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            backgroundColor: alpha(theme.palette.background.paper, 0.8),
-            borderRadius: '50%',
-            p: 0.5,
-            opacity: 0,
-            transition: 'opacity 0.2s ease',
-            '&:hover': { opacity: 1 }
-          }}>
-            <VisibilityIcon sx={{ fontSize: 16, color: theme.palette.text.primary }} />
+        <Box>
+          <Box sx={{ position: 'relative', display: 'inline-block' }}>
+            <img 
+              src={imageSrc}
+              alt="Message attachment" 
+              style={{ 
+                maxWidth: '300px',
+                maxHeight: '200px',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                display: loading ? 'none' : 'block',
+                objectFit: 'cover',
+                border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                transition: 'transform 0.2s ease',
+              }}
+              onLoad={handleImageLoaded}
+              onError={handleImageError}
+              onClick={onClick || (() => window.open(imageSrc, '_blank'))}
+              onMouseEnter={(e) => e.target.style.transform = 'scale(1.02)'}
+              onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+            />
+            
+            {/* Overlay con icono de zoom */}
+            <Box sx={{
+              position: 'absolute',
+              top: 8,
+              right: 8,
+              backgroundColor: alpha(theme.palette.background.paper, 0.8),
+              borderRadius: '50%',
+              p: 0.5,
+              opacity: 0,
+              transition: 'opacity 0.2s ease',
+              '&:hover': { opacity: 1 }
+            }}>
+              <VisibilityIcon sx={{ fontSize: 16, color: theme.palette.text.primary }} />
+            </Box>
           </Box>
+          
+          {/* Caption debajo de la imagen con texto procesado */}
+          {caption && caption.trim() && (
+            <Box sx={{ mt: 1 }}>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  lineHeight: 1.4,
+                  wordBreak: 'break-word',
+                  whiteSpace: 'pre-wrap', // Esto es clave para mostrar los saltos de línea
+                  color: 'inherit',
+                  opacity: 0.9
+                }}
+              >
+                {processMessageText(caption)}
+              </Typography>
+            </Box>
+          )}
         </Box>
       )}
     </Box>
@@ -428,8 +460,8 @@ const Messages = ({ conversationId }) => {
   const [isSending, setIsSending] = useState(false);
   const [autoresponse, setAutoresponse] = useState(true);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [openImageModal, setOpenImageModal] = useState(false);
   const [modalImageSrc, setModalImageSrc] = useState('');
+  const [openImageModal, setOpenImageModal] = useState(false);
   const [infoDrawerOpen, setInfoDrawerOpen] = useState(false);
   const [highlightedMessageId, setHighlightedMessageId] = useState(null);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
@@ -724,43 +756,44 @@ const Messages = ({ conversationId }) => {
   };
 
   // Renderizado del contenido del mensaje
-  const renderMessageContent = (msg) => {
-    switch (msg.message_type) {
-      case 'audio':
-        return (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1 }}>
-            <VolumeUpIcon sx={{ color: theme.palette.primary.main, fontSize: 20 }} />
-            <CustomAudioPlayer 
-              src={`https://chatboot-webhook-production.up.railway.app/api/download-media?url=${encodeURIComponent(msg.media_url)}&mediaId=${encodeURIComponent(msg.media_id)}`} 
-            />
-          </Box>
-        );
-      case 'image':
-        return (
-          <MessageImage 
-            mediaId={msg.media_id} 
-            onClick={() => handleOpenImageModal(`https://chatboot-webhook-production.up.railway.app/api/download-image/${msg.media_id}`)}
+const renderMessageContent = (msg) => {
+  switch (msg.message_type) {
+    case 'audio':
+      return (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1 }}>
+          <VolumeUpIcon sx={{ color: theme.palette.primary.main, fontSize: 20 }} />
+          <CustomAudioPlayer 
+            src={`https://chatboot-webhook-production.up.railway.app/api/download-media?url=${encodeURIComponent(msg.media_url)}&mediaId=${encodeURIComponent(msg.media_id)}`} 
           />
-        );
-      case 'document':
-        return (
-          <MessageDocument 
-            mediaId={msg.media_id} 
-            fileName="Documento Adjunto"
-          />
-        );
-      default:
-        return (
-          <Typography variant="body1" sx={{ 
-            lineHeight: 1.5,
-            wordBreak: 'break-word',
-            whiteSpace: 'pre-wrap'
-          }}>
-            {msg.message}
-          </Typography>
-        );
-    }
-  };
+        </Box>
+      );
+    case 'image':
+      return (
+        <MessageImage 
+          mediaId={msg.media_id} 
+          caption={msg.message} // El caption se procesará automáticamente
+          onClick={() => handleOpenImageModal(`https://chatboot-webhook-production.up.railway.app/api/download-image/${msg.media_id}`)}
+        />
+      );
+    case 'document':
+      return (
+        <MessageDocument 
+          mediaId={msg.media_id} 
+          fileName="Documento Adjunto"
+        />
+      );
+    default:
+      return (
+        <Typography variant="body1" sx={{ 
+          lineHeight: 1.5,
+          wordBreak: 'break-word',
+          whiteSpace: 'pre-wrap' // Importante: esto permite mostrar saltos de línea
+        }}>
+          {processMessageText(msg.message)} {/* Procesar el texto aquí también */}
+        </Typography>
+      );
+  }
+};
 
   return (
     <Box sx={{ 
@@ -1059,55 +1092,56 @@ const Messages = ({ conversationId }) => {
       </List>
 
       {/* Modal para visualizar imágenes */}
-      <Modal
-        open={openImageModal}
-        onClose={() => setOpenImageModal(false)}
-        sx={{ zIndex: 2000 }}
-      >
-        <Box sx={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          backgroundColor: alpha(theme.palette.background.paper, 0.95),
-          backdropFilter: 'blur(20px)',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
-          p: 2,
-          maxWidth: '90vw',
-          maxHeight: '90vh',
-          overflow: 'auto',
-          borderRadius: 3,
-          textAlign: 'center',
-          border: `1px solid ${alpha(theme.palette.divider, 0.2)}`
-        }}>
-          <IconButton 
-            sx={{ 
-              position: 'absolute', 
-              top: 8, 
-              right: 8,
-              backgroundColor: alpha(theme.palette.background.paper, 0.8),
-              '&:hover': { 
-                backgroundColor: theme.palette.background.paper,
-                transform: 'scale(1.1)'
-              },
-              transition: 'all 0.2s ease'
-            }}
-            onClick={() => setOpenImageModal(false)}
-          >
-            <CloseIcon />
-          </IconButton>
-          <img 
-            src={modalImageSrc} 
-            alt="Full size" 
-            style={{ 
-              maxWidth: '100%', 
-              maxHeight: 'calc(90vh - 100px)',
-              objectFit: 'contain',
-              borderRadius: '8px'
-            }} 
-          />
-        </Box>
-      </Modal>
+<Modal
+  open={openImageModal}
+  onClose={() => setOpenImageModal(false)}
+  sx={{ zIndex: 2000 }}
+>
+  <Box sx={{
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    backgroundColor: alpha(theme.palette.background.paper, 0.95),
+    backdropFilter: 'blur(20px)',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)',
+    p: 2,
+    maxWidth: '90vw',
+    maxHeight: '90vh',
+    overflow: 'auto',
+    borderRadius: 3,
+    textAlign: 'center',
+    border: `1px solid ${alpha(theme.palette.divider, 0.2)}`
+  }}>
+    <IconButton 
+      sx={{ 
+        position: 'absolute', 
+        top: 8, 
+        right: 8,
+        backgroundColor: alpha(theme.palette.background.paper, 0.8),
+        '&:hover': { 
+          backgroundColor: theme.palette.background.paper,
+          transform: 'scale(1.1)'
+        },
+        transition: 'all 0.2s ease'
+      }}
+      onClick={() => setOpenImageModal(false)}
+    >
+      <CloseIcon />
+    </IconButton>
+    <img 
+      src={modalImageSrc} 
+      alt="Full size" 
+      style={{ 
+        maxWidth: '100%', 
+        maxHeight: 'calc(90vh - 100px)',
+        objectFit: 'contain',
+        borderRadius: '8px'
+      }} 
+    />
+  </Box>
+</Modal>
+
 
       {/* Indicador de carga al enviar */}
       {isSending && (

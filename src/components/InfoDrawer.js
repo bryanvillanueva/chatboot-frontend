@@ -18,7 +18,8 @@ import {
   ImageListItem,
   Tab,
   Tabs,
-  Button
+  Button,
+  useTheme // Añadir esta importación
 } from '@mui/material';
 import { 
   Close as CloseIcon, 
@@ -33,7 +34,8 @@ import {
 import axios from 'axios';
 
 // Componente personalizado para la miniatura de imagen
-const ImageThumbnail = ({ mediaId, onClick }) => {
+const ImageThumbnail = ({ mediaId, caption, onClick }) => {
+  const theme = useTheme();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   
@@ -43,7 +45,6 @@ const ImageThumbnail = ({ mediaId, onClick }) => {
     <Box 
       sx={{ 
         width: '100%', 
-        height: 100, 
         position: 'relative', 
         cursor: 'pointer',
         overflow: 'hidden',
@@ -83,21 +84,52 @@ const ImageThumbnail = ({ mediaId, onClick }) => {
           <Typography variant="caption" color="error">Error</Typography>
         </Box>
       ) : (
-        <img 
-          src={imageUrl}
-          alt="Media attachment" 
-          style={{ 
-            width: '100%', 
-            height: '100%', 
-            objectFit: 'cover',
-            display: loading ? 'none' : 'block'
-          }}
-          onLoad={() => setLoading(false)}
-          onError={() => {
-            setLoading(false);
-            setError(true);
-          }}
-        />
+        <Box>
+          <img 
+            src={imageUrl}
+            alt="Media attachment" 
+            style={{ 
+              width: '100%', 
+              height: '100px',
+              objectFit: 'cover',
+              display: loading ? 'none' : 'block'
+            }}
+            onLoad={() => setLoading(false)}
+            onError={() => {
+              setLoading(false);
+              setError(true);
+            }}
+          />
+          {/* Caption en miniatura */}
+          {caption && caption.trim() !== '' && (
+            <Box sx={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              backgroundColor: 'rgba(0,0,0,0.7)',
+              color: 'white',
+              padding: '4px 8px',
+              fontSize: '0.7rem',
+              lineHeight: 1.2
+            }}>
+              <Typography 
+                variant="caption" 
+                sx={{ 
+                  color: 'white',
+                  fontSize: '0.7rem',
+                  display: '-webkit-box',
+                  WebkitLineClamp: 2,
+                  WebkitBoxOrient: 'vertical',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}
+              >
+                {caption}
+              </Typography>
+            </Box>
+          )}
+        </Box>
       )}
     </Box>
   );
