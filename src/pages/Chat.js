@@ -106,23 +106,26 @@ const Chat = ({ onSelectConversation }) => {
   };
 
   // Función para determinar qué mostrar como último mensaje según su tipo
-  const getLastMessagePreview = (conversation) => {
-    if (!conversation.last_message_type) {
+ const getLastMessagePreview = (conversation) => {
+  if (!conversation.last_message_type) {
+    return conversation.last_message || 'Sin mensajes';
+  }
+  
+  switch (conversation.last_message_type) {
+    case 'audio':
+      return '🎵 Mensaje de voz';
+    case 'image':
+      // Si hay caption en el mensaje, mostrarlo
+      if (conversation.last_message && conversation.last_message.trim() !== '') {
+        return `📷 ${conversation.last_message}`;
+      }
+      return '📷 Imagen';
+    case 'document':
+      return '📄 Documento';
+    default:
       return conversation.last_message || 'Sin mensajes';
-    }
-    
-    switch (conversation.last_message_type) {
-      case 'audio':
-        return '🎵 Mensaje de voz';
-      case 'image':
-        return '📷 Imagen';
-      case 'document':
-        return '📄 Documento';
-      default:
-        return conversation.last_message || 'Sin mensajes';
-    }
-  };
-
+  }
+};
   // Función para obtener el icono del tipo de mensaje
   const getMessageTypeIcon = (type) => {
     switch (type) {
