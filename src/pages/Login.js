@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   Paper, 
@@ -9,18 +9,23 @@ import {
   IconButton,
   Alert,
   useTheme,
-  alpha
+  alpha,
+  Divider,
+  Chip
 } from '@mui/material';
 import { 
   Visibility, 
   VisibilityOff,
-  WhatsApp as WhatsAppIcon
+  WhatsApp as WhatsAppIcon,
+  Facebook as FacebookIcon
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Login = () => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
+  
   const [credentials, setCredentials] = useState({
     username: '',
     password: ''
@@ -28,6 +33,35 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [facebookLoading, setFacebookLoading] = useState(false);
+
+  // Manejar callback de Facebook al cargar el componente
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const fbToken = urlParams.get('fb_token');
+    const fbId = urlParams.get('fb_id');
+    const userName = urlParams.get('name');
+    const fbError = urlParams.get('error');
+    
+    if (fbError) {
+      setError('Error al iniciar sesión con Facebook: ' + (urlParams.get('error_description') || 'Error desconocido'));
+    } else if (fbToken && fbId) {
+      // Login exitoso con Facebook
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('authMethod', 'facebook');
+      localStorage.setItem('facebookToken', fbToken);
+      localStorage.setItem('userData', JSON.stringify({
+        id: fbId,
+        firstname: userName || 'Usuario Facebook',
+        name: userName || 'Usuario Facebook',
+        role: 'Facebook User'
+      }));
+      
+      // Limpiar URL y redirigir
+      window.history.replaceState({}, document.title, '/login');
+      navigate('/');
+    }
+  }, [navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -48,6 +82,7 @@ const Login = () => {
       if (credentials.username === 'Admin' && credentials.password === 'Shark2025*!_') {
         // Guardar estado de autenticación
         localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('authMethod', 'credentials');
         localStorage.setItem('userData', JSON.stringify({
           firstname: 'Admin',
           role: 'Administrator'
@@ -58,6 +93,14 @@ const Login = () => {
       }
       setLoading(false);
     }, 1000);
+  };
+
+  const handleFacebookLogin = () => {
+    setFacebookLoading(true);
+    setError('');
+    
+    // Redirigir directamente al endpoint de inicio de Facebook en tu backend
+    window.location.href = 'https://chatboot-webhook-production.up.railway.app/auth/facebook/start';
   };
 
   return (
@@ -118,6 +161,59 @@ const Login = () => {
           </Alert>
         )}
 
+        {/* Botón de Facebook Login */}
+        <Button
+          fullWidth
+          variant="outlined"
+          startIcon={<FacebookIcon />}
+          onClick={handleFacebookLogin}
+          disabled={facebookLoading}
+          sx={{
+            mb: 3,
+            py: 1.5,
+            borderRadius: 2,
+            textTransform: 'none',
+            fontSize: '1rem',
+            fontWeight: 600,
+            color: '#1877F2',
+            borderColor: alpha('#1877F2', 0.4),
+            background: '#fff',
+            boxShadow: `0 2px 8px ${alpha('#1877F2', 0.1)}`,
+            '&:hover': {
+              background: alpha('#1877F2', 0.06),
+              borderColor: '#1877F2',
+              transform: 'translateY(-1px)',
+              boxShadow: `0 4px 12px ${alpha('#1877F2', 0.2)}`,
+            },
+            '&:active': {
+              transform: 'translateY(0)',
+            },
+            '&:disabled': {
+              opacity: 0.6
+            },
+            transition: 'all 0.2s ease-in-out'
+          }}
+        >
+          {facebookLoading ? 'Redirigiendo a Facebook...' : 'Continuar con Facebook'}
+        </Button>
+
+        {/* Divider */}
+        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+          <Divider sx={{ flex: 1 }} />
+          <Chip 
+            label="o" 
+            size="small" 
+            sx={{ 
+              mx: 2, 
+              backgroundColor: alpha(theme.palette.text.secondary, 0.1),
+              color: theme.palette.text.secondary,
+              fontWeight: 500
+            }} 
+          />
+          <Divider sx={{ flex: 1 }} />
+        </Box>
+
+        {/* Formulario tradicional */}
         <form onSubmit={handleSubmit}>
           <TextField
             fullWidth
@@ -198,10 +294,10 @@ const Login = () => {
               textTransform: 'none',
               fontSize: '1rem',
               fontWeight: 600,
-              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100())`,
               boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
               '&:hover': {
-                background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.secondary.dark} 100%)`,
+                background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.secondary.dark} 100())`,
                 transform: 'translateY(-1px)',
                 boxShadow: `0 6px 16px ${alpha(theme.palette.primary.main, 0.4)}`,
               },
@@ -214,6 +310,14 @@ const Login = () => {
             {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
           </Button>
         </form>
+
+        {/* Información adicional */}
+        <Box sx={{ mt: 3, pt: 3, borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
+          <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', display: 'block' }}>
+            Al usar Facebook, podrás acceder a tus páginas de Facebook<br />
+            y gestionar leads automáticamente
+          </Typography>
+        </Box>
       </Paper>
     </Box>
   );
