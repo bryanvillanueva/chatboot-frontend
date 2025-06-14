@@ -3,36 +3,26 @@ import {
   Box, 
   Paper, 
   Typography, 
-  TextField, 
   Button, 
-  InputAdornment, 
-  IconButton,
   Alert,
   useTheme,
-  alpha,
-  Divider,
-  Chip
+  alpha
 } from '@mui/material';
 import { 
-  Visibility, 
-  VisibilityOff,
-  WhatsApp as WhatsAppIcon,
-  Facebook as FacebookIcon
+  Facebook as FacebookIcon,
+  Pages as PagesIcon,
+  TrendingUp as LeadsIcon,
+  Campaign as CampaignIcon
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { ReactComponent as SharkLogo } from '../assets/icon.svg';
 
 const Login = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   
-  const [credentials, setCredentials] = useState({
-    username: '',
-    password: ''
-  });
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
   const [facebookLoading, setFacebookLoading] = useState(false);
 
   // Manejar callback de Facebook al cargar el componente
@@ -63,38 +53,6 @@ const Login = () => {
     }
   }, [navigate]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setCredentials(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    setError(''); // Limpiar error al escribir
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    // Simular delay de red
-    setTimeout(() => {
-      if (credentials.username === 'Admin' && credentials.password === 'Shark2025*!_') {
-        // Guardar estado de autenticación
-        localStorage.setItem('isAuthenticated', 'true');
-        localStorage.setItem('authMethod', 'credentials');
-        localStorage.setItem('userData', JSON.stringify({
-          firstname: 'Admin',
-          role: 'Administrator'
-        }));
-        navigate('/');
-      } else {
-        setError('Credenciales inválidas');
-      }
-      setLoading(false);
-    }, 1000);
-  };
-
   const handleFacebookLogin = () => {
     setFacebookLoading(true);
     setError('');
@@ -110,53 +68,87 @@ const Login = () => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
-        p: 2
+        backgroundImage: 'url(https://id-frontend.prod-east.frontend.public.atl-paas.net/assets/wac.92a80da2.svg)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        p: 2,
+        position: 'relative',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: alpha('#000', 0.3),
+          zIndex: 1
+        }
       }}
     >
-      <Paper
+              <Paper
         elevation={3}
         sx={{
-          p: 4,
+          p: { xs: 3, sm: 4 },
           width: '100%',
-          maxWidth: 400,
-          borderRadius: 2,
+          maxWidth: { xs: '90%', sm: 450 },
+          borderRadius: 3,
           background: alpha(theme.palette.background.paper, 0.95),
           backdropFilter: 'blur(10px)',
-          border: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+          border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+          position: 'relative',
+          zIndex: 2
         }}
       >
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
+        <Box sx={{ textAlign: 'center', mb: { xs: 3, sm: 4 } }}>
           <Box sx={{
-            width: 60,
-            height: 60,
+            width: { xs: 64, sm: 80 },
+            height: { xs: 64, sm: 80 },
             borderRadius: 2,
-            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+            background: 'white',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 16px',
-            boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`
+            margin: '0 auto 24px',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+            p: 1
           }}>
-            <WhatsAppIcon sx={{ color: 'white', fontSize: 32 }} />
+            <SharkLogo 
+              style={{
+                width: '48px',
+                height: '48px',
+                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
+              }}
+            />
           </Box>
-          <Typography variant="h5" sx={{ 
+          <Typography variant="h4" sx={{ 
             fontWeight: 700,
             mb: 1,
+            fontSize: { xs: '1.5rem', sm: '2.125rem' },
             background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
             backgroundClip: 'text',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent'
           }}>
-            SHARK Business Suite
+            Shark Business Suite
           </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Inicia sesión para continuar
+          <Typography variant="h6" sx={{ 
+            fontWeight: 600,
+            color: theme.palette.text.primary,
+            mb: 1,
+            fontSize: { xs: '1rem', sm: '1.25rem' }
+          }}>
+            Inicia sesión con tu portafolio de Meta
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{
+            fontSize: { xs: '0.875rem', sm: '0.875rem' }
+          }}>
+            Accede a todas tus herramientas de marketing digital
           </Typography>
         </Box>
 
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
+          <Alert severity="error" sx={{ mb: { xs: 2, sm: 3 }, borderRadius: 2 }}>
             {error}
           </Alert>
         )}
@@ -164,158 +156,117 @@ const Login = () => {
         {/* Botón de Facebook Login */}
         <Button
           fullWidth
-          variant="outlined"
+          variant="contained"
           startIcon={<FacebookIcon />}
           onClick={handleFacebookLogin}
           disabled={facebookLoading}
           sx={{
-            mb: 3,
-            py: 1.5,
-            borderRadius: 2,
+            py: { xs: 1.5, sm: 2 },
+            borderRadius: 3,
             textTransform: 'none',
-            fontSize: '1rem',
+            fontSize: { xs: '1rem', sm: '1.1rem' },
             fontWeight: 600,
-            color: '#1877F2',
-            borderColor: alpha('#1877F2', 0.4),
-            background: '#fff',
-            boxShadow: `0 2px 8px ${alpha('#1877F2', 0.1)}`,
+            color: 'white',
+            background: 'linear-gradient(135deg, #1877F2 0%, #42A5F5 100%)',
+            boxShadow: '0 4px 16px rgba(24, 119, 242, 0.3)',
             '&:hover': {
-              background: alpha('#1877F2', 0.06),
-              borderColor: '#1877F2',
-              transform: 'translateY(-1px)',
-              boxShadow: `0 4px 12px ${alpha('#1877F2', 0.2)}`,
+              background: 'linear-gradient(135deg, #166FE5 0%, #1976D2 100%)',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 8px 24px rgba(24, 119, 242, 0.4)',
             },
             '&:active': {
               transform: 'translateY(0)',
             },
             '&:disabled': {
-              opacity: 0.6
+              opacity: 0.7,
+              transform: 'none'
             },
-            transition: 'all 0.2s ease-in-out'
+            transition: 'all 0.3s ease-in-out'
           }}
         >
-          {facebookLoading ? 'Redirigiendo a Facebook...' : 'Continuar con Facebook'}
+          {facebookLoading ? 'Conectando con Meta...' : 'Continuar con Meta Business'}
         </Button>
 
-        {/* Divider */}
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <Divider sx={{ flex: 1 }} />
-          <Chip 
-            label="o" 
-            size="small" 
-            sx={{ 
-              mx: 2, 
-              backgroundColor: alpha(theme.palette.text.secondary, 0.1),
-              color: theme.palette.text.secondary,
-              fontWeight: 500
-            }} 
-          />
-          <Divider sx={{ flex: 1 }} />
+        {/* Información adicional mejorada */}
+        <Box sx={{ mt: { xs: 3, sm: 4 }, pt: { xs: 2, sm: 3 }, borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
+          <Typography variant="body2" color="text.secondary" sx={{ 
+            textAlign: 'center', 
+            mb: { xs: 2, sm: 3 },
+            fontWeight: 500,
+            fontSize: { xs: '0.875rem', sm: '0.875rem' }
+          }}>
+            Al continuar con Meta, podrás:
+          </Typography>
+          
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 1.5, sm: 2 } }}>
+            {[
+              {
+                icon: <PagesIcon sx={{ fontSize: { xs: '1rem', sm: '1.2rem' }, color: '#1877F2' }} />,
+                text: 'Gestionar tus páginas de Facebook e Instagram'
+              },
+              {
+                icon: <LeadsIcon sx={{ fontSize: { xs: '1rem', sm: '1.2rem' }, color: '#00C851' }} />,
+                text: 'Acceder a leads y mensajes automatizados'
+              },
+              {
+                icon: <CampaignIcon sx={{ fontSize: { xs: '1rem', sm: '1.2rem' }, color: '#FF6900' }} />,
+                text: 'Sincronizar campañas de marketing digital'
+              }
+            ].map((feature, index) => (
+              <Box 
+                key={index}
+                sx={{ 
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: { xs: 1.5, sm: 2 },
+                  p: { xs: 1.5, sm: 2 },
+                  borderRadius: 2,
+                  background: alpha(theme.palette.primary.main, 0.05),
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    background: alpha(theme.palette.primary.main, 0.08),
+                    transform: { xs: 'none', sm: 'translateX(4px)' }
+                  }
+                }}
+              >
+                <Box sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: { xs: 28, sm: 32 },
+                  height: { xs: 28, sm: 32 },
+                  borderRadius: 1,
+                  background: 'white',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}>
+                  {feature.icon}
+                </Box>
+                <Typography variant="body2" color="text.secondary" sx={{ 
+                  fontWeight: 500,
+                  flex: 1,
+                  fontSize: { xs: '0.8rem', sm: '0.875rem' }
+                }}>
+                  {feature.text}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
         </Box>
 
-        {/* Formulario tradicional */}
-        <form onSubmit={handleSubmit}>
-          <TextField
-            fullWidth
-            label="Usuario"
-            name="username"
-            value={credentials.username}
-            onChange={handleChange}
-            margin="normal"
-            variant="outlined"
-            autoComplete="username"
-            required
-            sx={{
-              mb: 2,
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                '& fieldset': {
-                  borderColor: alpha(theme.palette.divider, 0.2),
-                },
-                '&:hover fieldset': {
-                  borderColor: alpha(theme.palette.primary.main, 0.5),
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: theme.palette.primary.main,
-                }
-              }
-            }}
-          />
-
-          <TextField
-            fullWidth
-            label="Contraseña"
-            name="password"
-            type={showPassword ? 'text' : 'password'}
-            value={credentials.password}
-            onChange={handleChange}
-            margin="normal"
-            variant="outlined"
-            autoComplete="current-password"
-            required
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword(!showPassword)}
-                    edge="end"
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              )
-            }}
-            sx={{
-              mb: 3,
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                '& fieldset': {
-                  borderColor: alpha(theme.palette.divider, 0.2),
-                },
-                '&:hover fieldset': {
-                  borderColor: alpha(theme.palette.primary.main, 0.5),
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: theme.palette.primary.main,
-                }
-              }
-            }}
-          />
-
-          <Button
-            fullWidth
-            type="submit"
-            variant="contained"
-            size="large"
-            disabled={loading}
-            sx={{
-              py: 1.5,
-              borderRadius: 2,
-              textTransform: 'none',
-              fontSize: '1rem',
-              fontWeight: 600,
-              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100())`,
-              boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
-              '&:hover': {
-                background: `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.secondary.dark} 100())`,
-                transform: 'translateY(-1px)',
-                boxShadow: `0 6px 16px ${alpha(theme.palette.primary.main, 0.4)}`,
-              },
-              '&:active': {
-                transform: 'translateY(0)',
-              },
-              transition: 'all 0.2s ease-in-out'
-            }}
-          >
-            {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
-          </Button>
-        </form>
-
-        {/* Información adicional */}
-        <Box sx={{ mt: 3, pt: 3, borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
-          <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', display: 'block' }}>
-            Al usar Facebook, podrás acceder a tus páginas de Facebook<br />
-            y gestionar leads automáticamente
+        {/* Footer */}
+        <Box sx={{ mt: { xs: 3, sm: 4 }, pt: { xs: 2, sm: 3 }, borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
+          <Typography variant="caption" color="text.secondary" sx={{ 
+            textAlign: 'center', 
+            display: 'flex', 
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 1,
+            fontSize: { xs: '0.75rem', sm: '0.75rem' }
+          }}>
+            Desarrollado con 
+            <span style={{ color: '#e25555', fontSize: '16px' }}>❤️</span> 
+            por Shark Agency
           </Typography>
         </Box>
       </Paper>
