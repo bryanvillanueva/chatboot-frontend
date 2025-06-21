@@ -57,7 +57,7 @@ const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Nunito", Helvetica, Arial, Lucida, sans-serif',
     h1: {
       fontSize: '2.25rem',
       fontWeight: 700,

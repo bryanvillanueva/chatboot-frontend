@@ -10,6 +10,7 @@ import Appointments from './pages/Appointments';
 import Students from './components/Students'; // Importamos el componente Students
 import MoodleUsers from './components/moodle/MoodleUsers'; // Importamos el componente MoodleUsers
 import WhatsAppAccounts from './pages/WhatsAppAccounts';
+import FacebookAccounts from './pages/FacebookAccounts';
 import FlowBuilder from './pages/FlowBuilder';
 import BulkSending from './pages/BulkSending';
 import CrmLeads from './pages/CrmLeads';
@@ -103,6 +104,12 @@ const App = () => {
           <Route path="/whatsapp-accounts" element={
             <ProtectedRoute>
               <WhatsAppAccounts />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/facebook-accounts" element={
+            <ProtectedRoute>
+              <FacebookAccounts />
             </ProtectedRoute>
           } />
           

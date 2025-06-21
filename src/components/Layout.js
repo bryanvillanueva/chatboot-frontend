@@ -41,7 +41,8 @@ import {
   ChevronLeft as ChevronLeftIcon,
   FiberManualRecord as DotIcon,
   Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon
+  VisibilityOff as VisibilityOffIcon,
+  Facebook as FacebookIcon
 } from '@mui/icons-material';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutProvider } from '../contexts/LayoutContext';
@@ -66,6 +67,7 @@ const Layout = ({ children }) => {
   );
   const [whatsappOpen, setWhatsappOpen] = useState(
     location.pathname.includes('/whatsapp') || 
+    location.pathname.includes('/facebook-accounts') ||
     location.pathname.includes('/flow-builder') || 
     location.pathname.includes('/bulk-sending') || 
     location.pathname.includes('/crm-leads') || 
@@ -78,6 +80,10 @@ const Layout = ({ children }) => {
     if (storedUserData) {
       try {
         const parsedUserData = JSON.parse(storedUserData);
+        // Asegurar que siempre tenga un role por defecto
+        if (!parsedUserData.role) {
+          parsedUserData.role = 'Usuario';
+        }
         setUserData(parsedUserData);
       } catch (error) {
         console.error('Error al analizar los datos del usuario:', error);
@@ -176,6 +182,12 @@ const Layout = ({ children }) => {
       label: 'Cuentas', 
       icon: SmartphoneIcon, 
       path: '/whatsapp-accounts' 
+    },
+    { 
+      id: 'facebook-accounts', 
+      label: 'Facebook', 
+      icon: FacebookIcon, 
+      path: '/facebook-accounts' 
     },
     { 
       id: 'flow-builder', 
@@ -356,6 +368,7 @@ const Layout = ({ children }) => {
               disableRipple
               sx={{
                 ...getListItemStyle(location.pathname.includes('/whatsapp') || 
+                  location.pathname.includes('/facebook-accounts') ||
                   location.pathname.includes('/flow-builder') || 
                   location.pathname.includes('/bulk-sending') || 
                   location.pathname.includes('/crm-leads') || 
@@ -369,6 +382,7 @@ const Layout = ({ children }) => {
               }}>
                 <WhatsAppIcon sx={{ 
                   color: (location.pathname.includes('/whatsapp') || 
+                    location.pathname.includes('/facebook-accounts') ||
                     location.pathname.includes('/flow-builder') || 
                     location.pathname.includes('/bulk-sending') || 
                     location.pathname.includes('/crm-leads') || 
@@ -385,6 +399,7 @@ const Layout = ({ children }) => {
                     primaryTypographyProps={{
                       sx: { 
                         color: (location.pathname.includes('/whatsapp') || 
+                          location.pathname.includes('/facebook-accounts') ||
                           location.pathname.includes('/flow-builder') || 
                           location.pathname.includes('/bulk-sending') || 
                           location.pathname.includes('/crm-leads') || 
@@ -396,9 +411,10 @@ const Layout = ({ children }) => {
                       }
                     }}
                   />
-                  {whatsappOpen ? 
+                  {(whatsappOpen) ? 
                     <ExpandLess sx={{ 
                       color: (location.pathname.includes('/whatsapp') || 
+                        location.pathname.includes('/facebook-accounts') ||
                         location.pathname.includes('/flow-builder') || 
                         location.pathname.includes('/bulk-sending') || 
                         location.pathname.includes('/crm-leads') || 
@@ -407,6 +423,7 @@ const Layout = ({ children }) => {
                     }} /> : 
                     <ExpandMore sx={{ 
                       color: (location.pathname.includes('/whatsapp') || 
+                        location.pathname.includes('/facebook-accounts') ||
                         location.pathname.includes('/flow-builder') || 
                         location.pathname.includes('/bulk-sending') || 
                         location.pathname.includes('/crm-leads') || 

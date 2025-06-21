@@ -31,6 +31,8 @@ const Login = () => {
     const fbToken = urlParams.get('fb_token');
     const fbId = urlParams.get('fb_id');
     const userName = urlParams.get('name');
+    const userEmail = urlParams.get('email');
+    const companyId = urlParams.get('company_id');
     const fbError = urlParams.get('error');
     
     if (fbError) {
@@ -42,9 +44,17 @@ const Login = () => {
       localStorage.setItem('facebookToken', fbToken);
       localStorage.setItem('userData', JSON.stringify({
         id: fbId,
-        firstname: userName || 'Usuario Facebook',
+        facebook_id: fbId,
+        firstname: userName ? userName.split(' ')[0] : 'Usuario',
+        lastname: userName ? userName.split(' ').slice(1).join(' ') : 'Facebook',
         name: userName || 'Usuario Facebook',
-        role: 'Facebook User'
+        email: userEmail || '',
+        role: 'Usuario', // Role fijo por defecto
+        company_id: companyId,
+        access_token: fbToken,
+        auth_method: 'facebook',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }));
       
       // Limpiar URL y redirigir

@@ -63,6 +63,13 @@ const Navbar = ({ pageTitle }) => {
         setUserData(parsedUserData);
       } catch (error) {
         console.error('Error al analizar los datos del usuario:', error);
+        // Datos dummy para demo en caso de error
+        setUserData({
+          firstname: 'Admin',
+          lastname: 'Usuario',
+          role: 'Administrator',
+          email: 'admin@shark.com'
+        });
       }
     } else {
       // Datos dummy para demo
@@ -96,7 +103,9 @@ const Navbar = ({ pageTitle }) => {
   // Función para cerrar sesión
   const handleLogout = () => {
     handleUserMenuClose();
-    localStorage.removeItem('authToken');
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('authMethod');
+    localStorage.removeItem('facebookToken');
     localStorage.removeItem('userData');
     navigate('/login', { replace: true });
   };
@@ -105,10 +114,12 @@ const Navbar = ({ pageTitle }) => {
   const displayName = userData ? 
     (userData.firstname && userData.lastname ? 
       `${userData.firstname} ${userData.lastname}` : 
-      userData.username || userData.email || 'Usuario') : 
+      userData.name || userData.firstname || userData.email || 'Usuario') : 
     'Usuario';
     
   const userRole = userData?.role || 'Usuario';
+  const userEmail = userData?.email || 'admin@shark.com';
+  const authMethod = userData?.auth_method || 'local';
 
   // Función para obtener el icono apropiado según el rol
   const getRoleIcon = (role) => {
@@ -138,6 +149,7 @@ const Navbar = ({ pageTitle }) => {
       'moodle': 'Moodle',
       'students': 'Estudiantes',
       'whatsapp-accounts': 'Cuentas WhatsApp',
+      'facebook-accounts': 'Cuentas Facebook',
       'flow-builder': 'Constructor de Flujos',
       'bulk-sending': 'Envíos Masivos',
       'crm-leads': 'CRM & Leads',
@@ -472,7 +484,7 @@ const Navbar = ({ pageTitle }) => {
           PaperProps={{
             elevation: 8,
             sx: {
-              width: 280,
+              width: 320,
               borderRadius: 3,
               mt: 1,
               overflow: 'visible',
@@ -504,9 +516,39 @@ const Navbar = ({ pageTitle }) => {
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 0.5 }}>
               {displayName}
             </Typography>
-            <Typography variant="caption" color="text.secondary">
-              {userData?.email || 'admin@shark.com'}
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+              {userEmail}
             </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Chip 
+                icon={getRoleIcon(userRole)}
+                label={userRole} 
+                size="small" 
+                sx={{ 
+                  height: 20,
+                  fontSize: '0.65rem',
+                  fontWeight: 500,
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  color: theme.palette.primary.main,
+                  '& .MuiChip-icon': {
+                    fontSize: '0.8rem'
+                  }
+                }} 
+              />
+              {authMethod === 'facebook' && (
+                <Chip 
+                  label="Facebook" 
+                  size="small" 
+                  sx={{ 
+                    height: 20,
+                    fontSize: '0.65rem',
+                    fontWeight: 500,
+                    bgcolor: alpha('#1877F2', 0.1),
+                    color: '#1877F2',
+                  }} 
+                />
+              )}
+            </Box>
           </Box>
 
           <MenuItem sx={{ py: 1.5, px: 3 }} onClick={handleUserMenuClose}>
