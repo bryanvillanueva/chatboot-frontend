@@ -47,6 +47,7 @@ export default function FacebookAccounts() {
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState({ open: false, severity: 'info', message: '' });
   const [copiedId, setCopiedId] = useState(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Obtener facebook_id del usuario autenticado
   const getFacebookId = () => {
@@ -60,8 +61,64 @@ export default function FacebookAccounts() {
 
   const facebookId = getFacebookId();
 
+  // Función de sincronización para negocios
+  const syncBusinesses = async () => {
+    if (!facebookId) {
+      setAlert({ open: true, severity: 'warning', message: 'No hay usuario autenticado.' });
+      return;
+    }
+    setLoading(true);
+    setIsSyncing(true);
+    setAlert({ open: false, message: '', severity: 'info' });
+    try {
+      // POST para sincronizar negocios
+      const res = await fetch(`${API_BASE}/api/facebook/businesses/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ facebook_id: facebookId }),
+      });
+      if (!res.ok) throw new Error('Error al sincronizar negocios');
+      // Tras sincronizar, consulta lo que tengas localmente
+      await fetchData('businesses', false);
+      setAlert({ open: true, severity: 'success', message: 'Negocios sincronizados y cargados correctamente.' });
+    } catch (err) {
+      setAlert({ open: true, severity: 'error', message: 'No se pudieron sincronizar los negocios.' });
+      setBusinesses([]);
+    } finally {
+      setLoading(false);
+      setIsSyncing(false);
+    }
+  };
+
+  // Función de sincronización para páginas
+  const syncPages = async () => {
+    if (!facebookId) {
+      setAlert({ open: true, severity: 'warning', message: 'No hay usuario autenticado.' });
+      return;
+    }
+    setLoading(true);
+    setIsSyncing(true);
+    setAlert({ open: false, message: '', severity: 'info' });
+    try {
+      const res = await fetch(`${API_BASE}/api/facebook/pages/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ facebook_id: facebookId }),
+      });
+      if (!res.ok) throw new Error('Error al sincronizar páginas');
+      await fetchData('pages', false);
+      setAlert({ open: true, severity: 'success', message: 'Páginas sincronizadas y cargadas correctamente.' });
+    } catch (err) {
+      setAlert({ open: true, severity: 'error', message: 'No se pudieron sincronizar las páginas.' });
+      setPages([]);
+    } finally {
+      setLoading(false);
+      setIsSyncing(false);
+    }
+  };
+
   // Fetch al cambiar tab o al cargar componente
-  const fetchData = async (endpoint) => {
+  const fetchData = async (endpoint, showSuccessMessage = true) => {
     if (!facebookId) {
       setAlert({ open: true, severity: 'warning', message: 'No hay usuario autenticado.' });
       return;
@@ -102,7 +159,9 @@ export default function FacebookAccounts() {
         setPages(enhancedPages);
       }
       
-      setAlert({ open: true, severity: 'success', message: 'Datos cargados correctamente.' });
+      if (showSuccessMessage) {
+        setAlert({ open: true, severity: 'success', message: 'Datos cargados correctamente.' });
+      }
     } catch (err) {
       setAlert({ open: true, severity: 'error', message: 'No se pudieron cargar los datos.' });
       if (endpoint === 'businesses') setBusinesses([]);
@@ -113,8 +172,12 @@ export default function FacebookAccounts() {
   };
 
   useEffect(() => {
-    // Cargar automáticamente al entrar o cambiar de tab
-    fetchData(tab === 0 ? 'businesses' : 'pages');
+    // Sincronizar al montar el componente según el tab
+    if (tab === 0) {
+      syncBusinesses();
+    } else {
+      syncPages();
+    }
     // eslint-disable-next-line
   }, [tab]);
 
@@ -201,7 +264,7 @@ export default function FacebookAccounts() {
 
           <Button
             variant="contained"
-            onClick={() => fetchData(tab === 0 ? 'businesses' : 'pages')}
+            onClick={() => (tab === 0 ? syncBusinesses() : syncPages())}
             disabled={loading}
             sx={{ 
               fontWeight: 600, 
@@ -213,7 +276,10 @@ export default function FacebookAccounts() {
             }}
             startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <RefreshIcon />}
           >
-            {loading ? 'Cargando...' : `Refrescar ${tab === 0 ? 'negocios' : 'páginas'}`}
+            {loading ? 
+              (isSyncing ? 'Sincronizando...' : 'Cargando...') : 
+              `Refrescar ${tab === 0 ? 'negocios' : 'páginas'}`
+            }
           </Button>
 
           {alert.open && (
