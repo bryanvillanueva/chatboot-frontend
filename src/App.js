@@ -15,6 +15,7 @@ import FlowBuilder from './pages/FlowBuilder';
 import BulkSending from './pages/BulkSending';
 import CrmLeads from './pages/CrmLeads';
 import EmailMarketing from './pages/EmailMarketing';
+import Contacts from './pages/Contacts';
 
 // Crear tema personalizado
 const theme = createTheme({
@@ -134,6 +135,12 @@ const App = () => {
           <Route path="/email-marketing" element={
             <ProtectedRoute>
               <EmailMarketing />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="/contacts" element={
+            <ProtectedRoute>
+              <Contacts />
             </ProtectedRoute>
           } />
           

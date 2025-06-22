@@ -42,7 +42,8 @@ import {
   FiberManualRecord as DotIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
-  Facebook as FacebookIcon
+  Facebook as FacebookIcon,
+  Business as BusinessIcon
 } from '@mui/icons-material';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LayoutProvider } from '../contexts/LayoutContext';
@@ -72,6 +73,9 @@ const Layout = ({ children }) => {
     location.pathname.includes('/bulk-sending') || 
     location.pathname.includes('/crm-leads') || 
     location.pathname.includes('/email-marketing')
+  );
+  const [crmOpen, setCrmOpen] = useState(
+    location.pathname.includes('/contacts')
   );
 
   // Cargar datos del usuario al montar el componente
@@ -113,6 +117,10 @@ const Layout = ({ children }) => {
 
   const handleWhatsAppClick = () => {
     setWhatsappOpen(!whatsappOpen);
+  };
+
+  const handleCrmClick = () => {
+    setCrmOpen(!crmOpen);
   };
 
   // Función para obtener estilos de items
@@ -212,6 +220,16 @@ const Layout = ({ children }) => {
       label: 'Email Marketing', 
       icon: EmailIcon, 
       path: '/email-marketing' 
+    },
+  ];
+
+  // CRM submenu
+  const crmMenuItems = [
+    { 
+      id: 'contacts', 
+      label: 'Contactos', 
+      icon: PeopleIcon, 
+      path: '/contacts' 
     },
   ];
 
@@ -347,6 +365,107 @@ const Layout = ({ children }) => {
               </ListItem>
             </Box>
           ))}
+
+          {/* CRM Section */}
+          <Box sx={{ mt: 2 }}>
+            {isDrawerExpanded && (
+              <Typography variant="overline" sx={{ 
+                px: 2, 
+                color: theme.palette.text.secondary,
+                fontSize: '0.7rem',
+                fontWeight: 600,
+                letterSpacing: '0.1em'
+              }}>
+                CRM
+              </Typography>
+            )}
+            
+            <ListItem 
+              button 
+              onClick={handleCrmClick}
+              disableRipple
+              sx={{
+                ...getListItemStyle(location.pathname.includes('/contacts')),
+                mt: 1
+              }}
+            >
+              <ListItemIcon sx={{ 
+                minWidth: isDrawerExpanded ? 40 : 'auto',
+                justifyContent: 'center'
+              }}>
+                <BusinessIcon sx={{ 
+                  color: location.pathname.includes('/contacts') 
+                    ? '#fff' : theme.palette.warning.main,
+                  transition: 'all 0.2s ease-in-out',
+                  fontSize: 22
+                }} />
+              </ListItemIcon>
+              {isDrawerExpanded && (
+                <>
+                  <ListItemText 
+                    primary="CRM" 
+                    primaryTypographyProps={{
+                      sx: { 
+                        color: location.pathname.includes('/contacts') 
+                          ? '#fff' : theme.palette.text.primary,
+                        fontWeight: 600,
+                        fontSize: '0.95rem',
+                        transition: 'all 0.2s ease-in-out'
+                      }
+                    }}
+                  />
+                  {crmOpen ? 
+                    <ExpandLess sx={{ 
+                      color: location.pathname.includes('/contacts') 
+                        ? '#fff' : theme.palette.text.secondary,
+                    }} /> : 
+                    <ExpandMore sx={{ 
+                      color: location.pathname.includes('/contacts') 
+                        ? '#fff' : theme.palette.text.secondary,
+                    }} />
+                  }
+                </>
+              )}
+            </ListItem>
+            
+            {/* CRM Submenu */}
+            {isDrawerExpanded && (
+              <Collapse in={crmOpen} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding>
+                  {crmMenuItems.map((subItem) => (
+                    <Box key={subItem.id} sx={{ textDecoration: 'none' }} component={Link} to={subItem.path}>
+                      <ListItem 
+                        button 
+                        disableRipple
+                        sx={getSubItemStyle(location.pathname === subItem.path)}
+                      >
+                        <ListItemIcon sx={{ minWidth: 32 }}>
+                          <subItem.icon sx={{ 
+                            color: location.pathname === subItem.path ? 
+                              theme.palette.primary.main : theme.palette.text.secondary,
+                            fontSize: 18,
+                            transition: 'all 0.2s ease-in-out'
+                          }} />
+                        </ListItemIcon>
+                        <ListItemText 
+                          primary={subItem.label} 
+                          primaryTypographyProps={{
+                            sx: { 
+                              color: location.pathname === subItem.path ? 
+                                theme.palette.primary.main : theme.palette.text.secondary,
+                              fontSize: '0.85rem',
+                              fontWeight: location.pathname === subItem.path ? 600 : 400,
+                              transition: 'all 0.2s ease-in-out'
+                            }
+                          }}
+                        />
+                      </ListItem>
+                    </Box>
+                  ))}
+                </List>
+              </Collapse>
+            )}
+          </Box>
 
           {/* WhatsApp Business Section */}
           <Box sx={{ mt: 2 }}>

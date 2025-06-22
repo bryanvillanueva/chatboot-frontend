@@ -16,6 +16,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ReactComponent as SharkLogo } from '../assets/icon.svg';
+import { BACKEND_URL, FRONTEND_URL, REDIRECT_URL } from '../config/config';
 
 const Login = () => {
   const theme = useTheme();
@@ -35,9 +36,19 @@ const Login = () => {
     const companyId = urlParams.get('company_id');
     const fbError = urlParams.get('error');
     
+    console.log('🔍 Parámetros de URL recibidos:', {
+      fbToken: !!fbToken,
+      fbId,
+      userName,
+      userEmail,
+      companyId,
+      fbError
+    });
+    
     if (fbError) {
       setError('Error al iniciar sesión con Facebook: ' + (urlParams.get('error_description') || 'Error desconocido'));
     } else if (fbToken && fbId) {
+      console.log('✅ Login exitoso con Facebook');
       // Login exitoso con Facebook
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('authMethod', 'facebook');
@@ -67,8 +78,17 @@ const Login = () => {
     setFacebookLoading(true);
     setError('');
     
-    // Redirigir directamente al endpoint de inicio de Facebook en tu backend
-    window.location.href = 'https://chatboot-webhook-production.up.railway.app/auth/facebook/start';
+    console.log('🚀 Iniciando login con Facebook...');
+    console.log('📍 Backend URL:', BACKEND_URL);
+    console.log('📍 Frontend URL:', FRONTEND_URL);
+    console.log('📍 Window location:', window.location.href);
+    console.log('📍 Window origin:', window.location.origin);
+    
+    // Redirigir al endpoint de inicio con la URL del frontend
+    const authUrl = `${BACKEND_URL}/auth/facebook/start?frontend_url=${encodeURIComponent(FRONTEND_URL)}`;
+    console.log('🔍 Auth URL completa:', authUrl);
+    
+    window.location.href = authUrl;
   };
 
   return (
